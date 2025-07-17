@@ -14,3 +14,5 @@ declare module '@env' {
   export const ENABLE_VOICE_RESPONSES: string;
   export const EXPO_PUBLIC_DEV_MODE: string;
 }
+
+export {};

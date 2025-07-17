@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "jsx": "react-native",
     "lib": ["esnext"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -19,30 +19,20 @@
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["./src/*"],
       "@components/*": ["./components/*"],
-      "@hooks/*": ["./hooks/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "@constants/*": ["./constants/*"],
       "@utils/*": ["./utils/*"],
-      "@screens/*": ["./app/*"],
+      "@screens/*": ["./src/screens/*"],
       "@assets/*": ["./assets/*"],
       "@types/*": ["./types/*"],
       "@services/*": ["./services/*"],
       "@store/*": ["./store/*"],
-      "@agents/*": ["./agents/*"]
+      "@agents/*": ["./agents/*"],
+      "@navigation/*": ["./src/navigation/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "babel.config.js",
-    "metro.config.js",
-    "jest.config.js",
-    "app-example"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js", "app-example"]
 }

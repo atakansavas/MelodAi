@@ -1,6 +1,6 @@
 {
-  "name": "spoti",
-  "main": "expo-router/entry",
+  "name": "Melodia",
+  "main": "src/App.tsx",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -26,7 +26,6 @@
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.3.2",
     "expo-linking": "~7.1.7",
-    "expo-router": "~5.1.3",
     "expo-secure-store": "^14.2.3",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
