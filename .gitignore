@@ -32,8 +32,39 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+.env.development
+.env.test
 
 # typescript
 *.tsbuildinfo
 
 app-example
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# OS generated files
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/

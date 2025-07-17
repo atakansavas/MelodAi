@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Expo App",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "ios",
+      "target": "simulator",
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Android",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "target": "emulator",
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Attach to Metro",
+      "type": "reactnative",
+      "request": "attach",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
