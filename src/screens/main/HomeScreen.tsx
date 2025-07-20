@@ -11,14 +11,15 @@ import {
 
 import { SpotifyApiService } from '@services/spotify';
 import { useAuthStore } from '@store/auth';
-import { SpotifyPlayHistory, SpotifyTrack } from '@types/spotify';
 
+import { SpotifyPlayHistory, SpotifyTrack } from '../../../types/spotify';
 import { useRouter } from '../../hooks/useRouter';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { logout } = useAuthStore();
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
+  console.log('🚀 ~ HomeScreen ~ recentTracks:', recentTracks);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -28,7 +29,7 @@ export default function HomeScreen() {
     try {
       setIsLoading(true);
       const tracks = await spotifyApi.getRecentlyPlayed(20);
-      setRecentTracks(tracks);
+      setRecentTracks(tracks.items);
     } catch (error) {
       console.error('Error loading recent tracks:', error);
       Alert.alert('Hata', 'Şarkılar yüklenirken bir hata oluştu.');

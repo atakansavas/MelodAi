@@ -2,8 +2,8 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 
-import { SPOTIFY_CONFIG, STORAGE_KEYS } from '@/constants/config';
-import { SpotifyTokenResponse } from '@/types/spotify';
+import { SPOTIFY_CONFIG, STORAGE_KEYS } from '../../constants/config';
+import { SpotifyTokenResponse } from '../../types/spotify';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -33,25 +33,43 @@ export class SpotifyAuthService {
 
   async handleAuthResponse(
     response: AuthSession.AuthSessionResult,
-    _request: AuthSession.AuthRequest
+    request: AuthSession.AuthRequest
   ): Promise<SpotifyTokenResponse | null> {
     if (response.type !== 'success' || !response.params.code) {
       return null;
     }
 
     try {
-      // For now, we'll simulate a successful auth response
-      // In a real app, you would exchange the code for tokens
-      const tokenResponse: SpotifyTokenResponse = {
-        access_token: 'mock_access_token',
-        refresh_token: 'mock_refresh_token',
-        token_type: 'Bearer',
-        expires_in: 3600,
-        scope: SPOTIFY_CONFIG.SCOPES,
-      };
+      // Exchange authorization code for access token
+      const tokenResponse = await AuthSession.exchangeCodeAsync(
+        {
+          code: response.params.code,
+          redirectUri: SPOTIFY_CONFIG.REDIRECT_URI,
+          clientId: SPOTIFY_CONFIG.CLIENT_ID,
+          clientSecret: process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_SECRET,
+          extraParams: {
+            code_verifier: request.codeVerifier || '',
+          },
+        },
+        {
+          tokenEndpoint: SPOTIFY_CONFIG.DISCOVERY.tokenEndpoint,
+        }
+      );
 
-      await this.saveTokens(tokenResponse);
-      return tokenResponse;
+      if (tokenResponse.accessToken) {
+        const tokens: SpotifyTokenResponse = {
+          access_token: tokenResponse.accessToken,
+          refresh_token: tokenResponse.refreshToken || '',
+          token_type: tokenResponse.tokenType || 'Bearer',
+          expires_in: tokenResponse.expiresIn || 3600,
+          scope: tokenResponse.scope || SPOTIFY_CONFIG.SCOPES,
+        };
+
+        await this.saveTokens(tokens);
+        return tokens;
+      }
+
+      return null;
     } catch (error) {
       console.error('Token exchange error:', error);
       return null;
@@ -95,14 +113,31 @@ export class SpotifyAuthService {
     }
 
     try {
-      // For now, we'll simulate a successful refresh
-      // In a real app, you would make the actual refresh request
+      const response = await fetch(SPOTIFY_CONFIG.DISCOVERY.tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${Buffer.from(
+            `${SPOTIFY_CONFIG.CLIENT_ID}:${process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_SECRET}`
+          ).toString('base64')}`,
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Refresh failed: ${response.status}`);
+      }
+
+      const data = await response.json();
       const tokenResponse: SpotifyTokenResponse = {
-        access_token: 'mock_refreshed_access_token',
-        refresh_token: refreshToken,
-        token_type: 'Bearer',
-        expires_in: 3600,
-        scope: SPOTIFY_CONFIG.SCOPES,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || refreshToken,
+        token_type: data.token_type,
+        expires_in: data.expires_in,
+        scope: data.scope,
       };
 
       await this.saveTokens(tokenResponse);

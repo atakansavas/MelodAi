@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { SpotifyAuthService } from '@services/spotify';
+import { SpotifyApiService, SpotifyAuthService } from '@services/spotify';
 import { useAuthStore } from '@store/auth';
 
 import { useRouter } from '../../hooks/useRouter';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setLoading } = useAuthStore();
+  const { setLoading, setUser } = useAuthStore();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const authService = SpotifyAuthService.getInstance();
+  const apiService = SpotifyApiService.getInstance();
 
   const handleSpotifyLogin = async () => {
     setIsAuthenticating(true);
@@ -18,12 +19,25 @@ export default function LoginScreen() {
 
     try {
       const request = authService.getAuthRequest();
-      const result = await request.promptAsync({});
+      console.log('🚀 ~ handleSpotifyLogin ~ request:', request);
+      const result = await request.promptAsync({
+        authorizationEndpoint: 'https://accounts.spotify.com/authorize',
+      });
+      console.log('🚀 ~ handleSpotifyLogin ~ result:', result);
 
       if (result.type === 'success') {
         const tokenResponse = await authService.handleAuthResponse(result, request);
 
         if (tokenResponse) {
+          // Get user information
+          try {
+            const user = await apiService.getCurrentUser();
+            setUser(user);
+            console.log('User data:', user);
+          } catch (userError) {
+            console.error('Failed to get user data:', userError);
+          }
+
           Alert.alert('🎉 Giriş Başarılı!', 'Spotify hesabınıza başarıyla giriş yaptınız.', [
             {
               text: 'Devam Et',

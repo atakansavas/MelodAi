@@ -1,48 +1,14 @@
-import axios, { AxiosInstance } from 'axios';
-import { API_CONFIG } from '@/constants/config';
+import { API_CONFIG } from '../../constants/config';
+import { SpotifyPlayHistory, SpotifyUser } from '../../types/spotify';
+
 import { SpotifyAuthService } from './auth';
-import { 
-  SpotifyUser, 
-  SpotifyPlayHistory, 
-  SpotifyTrack,
-  SpotifyArtist,
-  SpotifyAlbum 
-} from '@/types/spotify';
 
 export class SpotifyApiService {
   private static instance: SpotifyApiService;
   private authService: SpotifyAuthService;
-  private api: AxiosInstance;
 
   private constructor() {
     this.authService = SpotifyAuthService.getInstance();
-    this.api = axios.create({
-      baseURL: API_CONFIG.SPOTIFY_BASE_URL,
-    });
-
-    // Add auth interceptor
-    this.api.interceptors.request.use(async (config) => {
-      const token = await this.authService.getAccessToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    // Add response interceptor for token refresh
-    this.api.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (error.response?.status === 401) {
-          const newToken = await this.authService.refreshAccessToken();
-          if (newToken) {
-            error.config.headers.Authorization = `Bearer ${newToken}`;
-            return this.api.request(error.config);
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
   }
 
   static getInstance(): SpotifyApiService {
@@ -52,55 +18,85 @@ export class SpotifyApiService {
     return SpotifyApiService.instance;
   }
 
-  async getCurrentUser(): Promise<SpotifyUser> {
-    const { data } = await this.api.get<SpotifyUser>('/me');
-    return data;
-  }
+  private async makeAuthenticatedRequest(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<any> {
+    const accessToken = await this.authService.getAccessToken();
 
-  async getRecentlyPlayed(limit: number = 50): Promise<SpotifyPlayHistory[]> {
-    const { data } = await this.api.get('/me/player/recently-played', {
-      params: { limit },
-    });
-    return data.items;
-  }
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
 
-  async getTrack(trackId: string): Promise<SpotifyTrack> {
-    const { data } = await this.api.get<SpotifyTrack>(`/tracks/${trackId}`);
-    return data;
-  }
-
-  async getArtist(artistId: string): Promise<SpotifyArtist> {
-    const { data } = await this.api.get<SpotifyArtist>(`/artists/${artistId}`);
-    return data;
-  }
-
-  async getAlbum(albumId: string): Promise<SpotifyAlbum> {
-    const { data } = await this.api.get<SpotifyAlbum>(`/albums/${albumId}`);
-    return data;
-  }
-
-  async getTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: number = 20): Promise<SpotifyTrack[]> {
-    const { data } = await this.api.get('/me/top/tracks', {
-      params: { time_range: timeRange, limit },
-    });
-    return data.items;
-  }
-
-  async getTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: number = 20): Promise<SpotifyArtist[]> {
-    const { data } = await this.api.get('/me/top/artists', {
-      params: { time_range: timeRange, limit },
-    });
-    return data.items;
-  }
-
-  async searchTracks(query: string, limit: number = 20): Promise<SpotifyTrack[]> {
-    const { data } = await this.api.get('/search', {
-      params: {
-        q: query,
-        type: 'track',
-        limit,
+    const response = await fetch(`${API_CONFIG.SPOTIFY_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
       },
     });
-    return data.tracks.items;
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token expired, try to refresh
+        const newToken = await this.authService.refreshAccessToken();
+        if (newToken) {
+          // Retry the request with new token
+          return this.makeAuthenticatedRequest(endpoint, options);
+        }
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async getCurrentUser(): Promise<SpotifyUser> {
+    return this.makeAuthenticatedRequest('/me');
+  }
+
+  async getRecentlyPlayed(limit: number = 20): Promise<{ items: SpotifyPlayHistory[] }> {
+    return this.makeAuthenticatedRequest(`/me/player/recently-played?limit=${limit}`);
+  }
+
+  async getTopTracks(
+    timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
+    limit: number = 20
+  ) {
+    return this.makeAuthenticatedRequest(`/me/top/tracks?time_range=${timeRange}&limit=${limit}`);
+  }
+
+  async getTopArtists(
+    timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
+    limit: number = 20
+  ) {
+    return this.makeAuthenticatedRequest(`/me/top/artists?time_range=${timeRange}&limit=${limit}`);
+  }
+
+  async getPlaylists(limit: number = 20) {
+    return this.makeAuthenticatedRequest(`/me/playlists?limit=${limit}`);
+  }
+
+  async getPlaylistTracks(playlistId: string, limit: number = 20) {
+    return this.makeAuthenticatedRequest(`/playlists/${playlistId}/tracks?limit=${limit}`);
+  }
+
+  async searchTracks(query: string, limit: number = 20) {
+    return this.makeAuthenticatedRequest(
+      `/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`
+    );
+  }
+
+  async getTrack(trackId: string) {
+    return this.makeAuthenticatedRequest(`/tracks/${trackId}`);
+  }
+
+  async getArtist(artistId: string) {
+    return this.makeAuthenticatedRequest(`/artists/${artistId}`);
+  }
+
+  async getAlbum(albumId: string) {
+    return this.makeAuthenticatedRequest(`/albums/${albumId}`);
   }
 }

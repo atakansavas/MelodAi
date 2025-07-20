@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { SpotifyAuthState, SpotifyUser } from '@/types/spotify';
-import { SpotifyAuthService } from '@/services/spotify';
+
+import { SpotifyAuthService } from '@services/spotify';
+
+import { SpotifyAuthState, SpotifyUser } from '../types/spotify';
 
 interface AuthStore extends SpotifyAuthState {
   login: () => Promise<boolean>;
@@ -21,7 +23,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   login: async () => {
     const authService = SpotifyAuthService.getInstance();
     set({ isLoading: true });
-    
+
     try {
       const isAuth = await authService.isAuthenticated();
       set({ isAuthenticated: isAuth, isLoading: false });
@@ -36,7 +38,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     const authService = SpotifyAuthService.getInstance();
     set({ isLoading: true });
-    
+
     try {
       await authService.logout();
       set({
@@ -56,7 +58,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   checkAuth: async () => {
     const authService = SpotifyAuthService.getInstance();
     set({ isLoading: true });
-    
+
     try {
       const isAuth = await authService.isAuthenticated();
       set({ isAuthenticated: isAuth, isLoading: false });

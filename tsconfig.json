@@ -19,7 +19,7 @@
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./*"],
       "@components/*": ["./components/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@constants/*": ["./constants/*"],

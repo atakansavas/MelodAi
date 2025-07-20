@@ -1,4 +1,4 @@
-import { SPOTIFY_SCOPES } from '@/types/spotify';
+import { SPOTIFY_SCOPES } from '../types/spotify';
 
 export const SPOTIFY_CONFIG = {
   CLIENT_ID: process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID || '',
