@@ -1,4 +1,4 @@
-import { AIAgent } from '@/types/agent';
+import { AIAgent } from '../types/agent';
 
 import { LyricistAgent } from './music/LyricistAgent';
 import { MoodDetectorAgent } from './music/MoodDetectorAgent';

@@ -1,4 +1,4 @@
-import { BaseAgent, MusicContext, AgentPersonality } from '@/types/agent';
+import { AgentPersonality, BaseAgent, MusicContext } from '../../types/agent';
 import { LYRICIST_PROMPTS } from '../prompts/lyricist';
 
 export class LyricistAgent extends BaseAgent {
@@ -7,11 +7,11 @@ export class LyricistAgent extends BaseAgent {
   description = 'Şarkı sözlerinin derinliklerini keşfeder ve duygusal anlamları açığa çıkarır';
   avatar = '✍️';
   systemPrompt = LYRICIST_PROMPTS.system;
-  
+
   personality: AgentPersonality = {
     tone: 'enthusiastic',
     expertise: ['lyric analysis', 'poetry', 'metaphors', 'emotional interpretation'],
-    traits: ['poetic', 'insightful', 'emotional', 'creative']
+    traits: ['poetic', 'insightful', 'emotional', 'creative'],
   };
 
   specialties = [
@@ -19,24 +19,33 @@ export class LyricistAgent extends BaseAgent {
     'Metafor ve sembolizm',
     'Duygusal yorumlama',
     'Edebi teknikler',
-    'Kültürel referanslar'
+    'Kültürel referanslar',
   ];
 
   generatePrompt(context: MusicContext): string {
     const formattedContext = this.formatContext(context);
-    
-    if (context.userQuery?.toLowerCase().includes('metafor') || context.userQuery?.toLowerCase().includes('sembol')) {
+
+    if (
+      context.userQuery?.toLowerCase().includes('metafor') ||
+      context.userQuery?.toLowerCase().includes('sembol')
+    ) {
       return this.combinePrompts(LYRICIST_PROMPTS.metaphorAnalysis, formattedContext);
     }
-    
-    if (context.userQuery?.toLowerCase().includes('duygu') || context.userQuery?.toLowerCase().includes('emotion')) {
+
+    if (
+      context.userQuery?.toLowerCase().includes('duygu') ||
+      context.userQuery?.toLowerCase().includes('emotion')
+    ) {
       return this.combinePrompts(LYRICIST_PROMPTS.emotionalJourney, formattedContext);
     }
-    
-    if (context.userQuery?.toLowerCase().includes('teknik') || context.userQuery?.toLowerCase().includes('kafiye')) {
+
+    if (
+      context.userQuery?.toLowerCase().includes('teknik') ||
+      context.userQuery?.toLowerCase().includes('kafiye')
+    ) {
       return this.combinePrompts(LYRICIST_PROMPTS.poeticDevices, formattedContext);
     }
-    
+
     // Default: lyric meaning
     return this.combinePrompts(LYRICIST_PROMPTS.lyricMeaning, formattedContext);
   }

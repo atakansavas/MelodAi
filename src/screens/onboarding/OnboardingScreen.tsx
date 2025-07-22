@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useRouter } from '../../hooks/useRouter';
 import { agentRegistry } from '@agents/index';
 import { useAppStore } from '@store/app';
+
+import { useRouter } from '../../hooks/useRouter';
 
 export default function OnboardingScreen() {
   const router = useRouter();
