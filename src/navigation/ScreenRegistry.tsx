@@ -1,10 +1,10 @@
 import React from 'react';
 
-
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import ChatScreen from '../screens/main/ChatScreen';
 import HomeScreen from '../screens/main/HomeScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { ScreenName } from '../types/navigation';
 
@@ -13,6 +13,7 @@ export const ScreenRegistry: Record<ScreenName, React.ComponentType<any>> = {
   ONBOARDING: OnboardingScreen,
   MAIN_HOME: HomeScreen,
   MAIN_CHAT: ChatScreen,
+  MAIN_SETTINGS: SettingsScreen,
 };
 
 export const getScreenComponent = (screenName: ScreenName): React.ComponentType<any> => {

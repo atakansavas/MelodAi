@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { MainLayout } from '../../components/Layout';
 import { useRouter } from '../../hooks/useRouter';
 
 interface ChatScreenProps {
@@ -14,64 +15,29 @@ export default function ChatScreen({ params }: ChatScreenProps) {
   const trackId = params?.trackId || router.params.trackId;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Geri</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Chat</Text>
-      </View>
-
+    <MainLayout title="AI Chat" subtitle="Şarkı hakkında AI asistanlarla sohbet edin">
       <View style={styles.content}>
         <Text style={styles.title}>Chat Ekranı</Text>
         <Text style={styles.subtitle}>Track ID: {trackId}</Text>
         <Text style={styles.info}>
           Bu ekranda seçilen şarkı hakkında AI asistanlarla sohbet edeceksiniz.
         </Text>
-        
+
         <View style={styles.comingSoon}>
           <Text style={styles.comingSoonTitle}>🚧 Yakında Geliyor</Text>
           <Text style={styles.comingSoonText}>
-            Bu özellik henüz geliştiriliyor. Şarkı detayları, AI asistan seçimi 
-            ve gerçek zamanlı sohbet özelliği burada olacak.
+            Bu özellik henüz geliştiriliyor. Şarkı detayları, AI asistan seçimi ve gerçek zamanlı
+            sohbet özelliği burada olacak.
           </Text>
         </View>
       </View>
-    </View>
+    </MainLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    color: '#1DB954',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
     justifyContent: 'center',
   },
   title: {
@@ -96,7 +62,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   comingSoon: {
-    backgroundColor: '#111',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     padding: 24,
     borderRadius: 12,
     alignItems: 'center',

@@ -1,8 +1,4 @@
-export type ScreenName = 
-  | 'AUTH_LOGIN'
-  | 'ONBOARDING'
-  | 'MAIN_HOME'
-  | 'MAIN_CHAT';
+export type ScreenName = 'AUTH_LOGIN' | 'ONBOARDING' | 'MAIN_HOME' | 'MAIN_CHAT' | 'MAIN_SETTINGS';
 
 export interface NavigationState {
   currentScreen: ScreenName;
