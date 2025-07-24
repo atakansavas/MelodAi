@@ -84,13 +84,11 @@ export default function MainLayout({
     <View style={{ flex: 1 }}>
       {/* Blurred Background */}
       <BlurView intensity={20} style={StyleSheet.absoluteFillObject}>
-        <View
-          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(55, 24, 83, 0.8)' }]}
-        />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(55, 24, 83, 1)' }]} />
       </BlurView>
 
       {/* Drawer Background */}
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(55, 24, 83, 0.6)' }]}>
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(55, 24, 83)' }]}>
         <View style={{ flex: 1 }}>
           <View
             style={{
@@ -213,7 +211,7 @@ export default function MainLayout({
           }}
           style={{
             flex: 1,
-            backgroundColor: 'rgba(92, 50, 129, 0.9)',
+            backgroundColor: 'rgba(92, 50, 129, 1)',
             borderRadius: _borderRadius,
           }}
         >

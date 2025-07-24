@@ -24,6 +24,7 @@ Visit the project page: **[https://www.benatakan.com/projects](https://www.benat
 ## 🏗️ Architecture
 
 ### Technology Stack
+
 - **Frontend**: React Native with Expo
 - **State Management**: Zustand
 - **Navigation**: Custom Navigation System
@@ -32,6 +33,7 @@ Visit the project page: **[https://www.benatakan.com/projects](https://www.benat
 - **Language**: TypeScript
 
 ### Project Structure
+
 ```
 melodia/
 ├── 📱 src/                   # Source code
@@ -53,6 +55,7 @@ melodia/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Node.js** 18+
 - **Expo CLI** (`npm install -g @expo/cli`)
 - **Spotify Developer Account**
@@ -60,6 +63,7 @@ melodia/
 ### Installation
 
 1. **Clone and install**
+
    ```bash
    git clone https://github.com/yourusername/melodia.git
    cd melodia
@@ -67,6 +71,7 @@ melodia/
    ```
 
 2. **Environment Setup**
+
    ```bash
    cp .env.example .env
    # Add your Spotify Client ID
@@ -80,6 +85,7 @@ melodia/
 ## 🔧 Configuration
 
 ### Spotify Setup
+
 1. Create a Spotify app at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Add redirect URI: `spoti://auth/callback`
 3. Copy your Client ID to `.env`
@@ -90,6 +96,7 @@ melodia/
 - **[React Native Docs](https://reactnative.dev/docs/getting-started)**
 - **[Spotify Web API](https://developer.spotify.com/documentation/web-api/)**
 - **[Zustand](https://github.com/pmndrs/zustand)** - State management
+- **[Development Rules](./DEVELOPMENT_RULES.md)** - Package and coding guidelines
 
 ## 🤝 Contributing
 
@@ -103,6 +110,7 @@ melodia/
 ## 👨‍💻 Author
 
 **Atakan Savaş**
+
 - Website: [benatakan.com](https://www.benatakan.com)
 - Project Portfolio: [benatakan.com/projects](https://www.benatakan.com/projects)
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -27,7 +28,7 @@ export default function HomeScreen() {
     try {
       setIsLoading(true);
       const tracks = await spotifyApi.getRecentlyPlayed(20);
-      setRecentTracks(tracks.items);
+      setRecentTracks(tracks.items || []);
     } catch (error) {
       console.error('Error loading recent tracks:', error);
       Alert.alert('Hata', 'Şarkılar yüklenirken bir hata oluştu.');
@@ -43,13 +44,20 @@ export default function HomeScreen() {
   };
 
   const handleTrackPress = (track: SpotifyTrack) => {
-    router.goToChat(track.id);
+    router.goToChatDetail({
+      trackId: track.id,
+      trackName: track.name,
+      artistName: track.artists.map((artist) => artist.name).join(', '),
+    });
   };
 
   const handleChatSubmit = (input: string) => {
     if (input.trim()) {
-      // TODO: Implement chat functionality
-      console.log('Chat input:', input);
+      // Navigate to chat detail screen for general music chat
+      router.goToChatDetail({
+        trackName: 'Genel Müzik Sohbeti',
+        artistName: '',
+      });
     }
   };
 
@@ -73,6 +81,15 @@ export default function HomeScreen() {
     } else {
       return date.toLocaleDateString('tr-TR');
     }
+  };
+
+  const getAlbumImageUrl = (track: SpotifyTrack) => {
+    if (track.album?.images && track.album.images.length > 0) {
+      // Use the smallest image for better performance
+      const lastImage = track.album.images[track.album.images.length - 1];
+      return lastImage?.url || null;
+    }
+    return null;
   };
 
   return (
@@ -112,8 +129,18 @@ export default function HomeScreen() {
                 style={styles.trackCard}
                 onPress={() => handleTrackPress(item.track)}
               >
-                <View style={styles.trackImagePlaceholder}>
-                  <Text style={styles.trackImageText}>🎵</Text>
+                <View style={styles.trackImageContainer}>
+                  {getAlbumImageUrl(item.track) ? (
+                    <Image
+                      source={{ uri: getAlbumImageUrl(item.track)! }}
+                      style={styles.trackImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.trackImagePlaceholder}>
+                      <Text style={styles.trackImageText}>🎵</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.trackInfo}>
@@ -201,6 +228,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center',
   },
+  trackImageContainer: {
+    marginRight: 12,
+  },
+  trackImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+  },
   trackImagePlaceholder: {
     width: 56,
     height: 56,
@@ -208,7 +243,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   trackImageText: {
     fontSize: 24,

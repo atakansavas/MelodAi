@@ -110,40 +110,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Preferences Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tercihler</Text>
-          <View style={styles.sectionContent}>
-            <SettingItem
-              icon="bell"
-              title="Bildirimler"
-              subtitle="Yeni özellikler ve güncellemeler hakkında bilgilendir"
-              showSwitch={true}
-              switchValue={notificationsEnabled}
-              onSwitchChange={setNotificationsEnabled}
-              showArrow={false}
-            />
-            <SettingItem
-              icon="moon"
-              title="Karanlık Mod"
-              subtitle="Karanlık tema kullan"
-              showSwitch={true}
-              switchValue={darkModeEnabled}
-              onSwitchChange={setDarkModeEnabled}
-              showArrow={false}
-            />
-            <SettingItem
-              icon="play"
-              title="Otomatik Oynatma"
-              subtitle="Şarkıları otomatik olarak oynat"
-              showSwitch={true}
-              switchValue={autoPlayEnabled}
-              onSwitchChange={setAutoPlayEnabled}
-              showArrow={false}
-            />
-          </View>
-        </View>
-
         {/* Support Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Destek</Text>

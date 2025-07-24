@@ -10,6 +10,11 @@ export const useRouter = () => {
   const goToOnboarding = useCallback(() => replace('ONBOARDING'), [replace]);
   const goToHome = useCallback(() => replace('MAIN_HOME'), [replace]);
   const goToChat = useCallback((trackId: string) => navigate('MAIN_CHAT', { trackId }), [navigate]);
+  const goToChatDetail = useCallback(
+    (params?: { trackId?: string; trackName?: string; artistName?: string }) =>
+      navigate('MAIN_CHAT_DETAIL', params),
+    [navigate]
+  );
   const goToSettings = useCallback(() => navigate('MAIN_SETTINGS'), [navigate]);
 
   const router = useMemo(
@@ -33,9 +38,21 @@ export const useRouter = () => {
       goToOnboarding,
       goToHome,
       goToChat,
+      goToChatDetail,
       goToSettings,
     }),
-    [navigate, goBack, replace, params, goToLogin, goToOnboarding, goToHome, goToChat, goToSettings]
+    [
+      navigate,
+      goBack,
+      replace,
+      params,
+      goToLogin,
+      goToOnboarding,
+      goToHome,
+      goToChat,
+      goToChatDetail,
+      goToSettings,
+    ]
   );
 
   return router;

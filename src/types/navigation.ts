@@ -1,4 +1,10 @@
-export type ScreenName = 'AUTH_LOGIN' | 'ONBOARDING' | 'MAIN_HOME' | 'MAIN_CHAT' | 'MAIN_SETTINGS';
+export type ScreenName =
+  | 'AUTH_LOGIN'
+  | 'ONBOARDING'
+  | 'MAIN_HOME'
+  | 'MAIN_CHAT'
+  | 'MAIN_CHAT_DETAIL'
+  | 'MAIN_SETTINGS';
 
 export interface NavigationState {
   currentScreen: ScreenName;
@@ -8,5 +14,7 @@ export interface NavigationState {
 
 export interface NavigationParams {
   trackId?: string;
+  trackName?: string;
+  artistName?: string;
   [key: string]: any;
 }
