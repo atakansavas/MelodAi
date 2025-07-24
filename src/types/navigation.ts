@@ -2,7 +2,7 @@ export type ScreenName =
   | 'AUTH_LOGIN'
   | 'ONBOARDING'
   | 'MAIN_HOME'
-  | 'MAIN_CHAT'
+  | 'MAIN_SEARCH'
   | 'MAIN_CHAT_DETAIL'
   | 'MAIN_SETTINGS';
 

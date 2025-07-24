@@ -9,7 +9,7 @@ export const useRouter = () => {
   const goToLogin = useCallback(() => replace('AUTH_LOGIN'), [replace]);
   const goToOnboarding = useCallback(() => replace('ONBOARDING'), [replace]);
   const goToHome = useCallback(() => replace('MAIN_HOME'), [replace]);
-  const goToChat = useCallback((trackId: string) => navigate('MAIN_CHAT', { trackId }), [navigate]);
+  const goToSearch = useCallback(() => navigate('MAIN_SEARCH'), [navigate]);
   const goToChatDetail = useCallback(
     (params?: { trackId?: string; trackName?: string; artistName?: string }) =>
       navigate('MAIN_CHAT_DETAIL', params),
@@ -37,7 +37,7 @@ export const useRouter = () => {
       goToLogin,
       goToOnboarding,
       goToHome,
-      goToChat,
+      goToSearch,
       goToChatDetail,
       goToSettings,
     }),
@@ -49,7 +49,7 @@ export const useRouter = () => {
       goToLogin,
       goToOnboarding,
       goToHome,
-      goToChat,
+      goToSearch,
       goToChatDetail,
       goToSettings,
     ]

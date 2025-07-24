@@ -58,6 +58,18 @@ export interface SpotifyPlayHistory {
   } | null;
 }
 
+export interface SpotifySearchResponse {
+  tracks: {
+    href: string;
+    items: SpotifyTrack[];
+    limit: number;
+    next: string | null;
+    offset: number;
+    previous: string | null;
+    total: number;
+  };
+}
+
 export interface SpotifyTokenResponse {
   access_token: string;
   token_type: string;
@@ -82,4 +94,6 @@ export const SPOTIFY_SCOPES = [
   'user-top-read',
   'playlist-read-private',
   'playlist-read-collaborative',
+  'streaming',
+  'user-modify-playback-state',
 ];

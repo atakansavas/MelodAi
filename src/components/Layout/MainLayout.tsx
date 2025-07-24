@@ -16,6 +16,7 @@ import { Easing } from 'react-native-reanimated';
 import { useAuthStore } from '@store/auth';
 
 import { useRouter } from '../../hooks/useRouter';
+import { useNavigation } from '../../navigation/NavigationStore';
 
 const { width } = Dimensions.get('screen');
 
@@ -42,6 +43,7 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const router = useRouter();
   const { logout } = useAuthStore();
+  const { currentScreen } = useNavigation();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [chatInput, setChatInput] = useState('');
 
@@ -55,6 +57,9 @@ export default function MainLayout({
     switch (action) {
       case 'home':
         router.goToHome();
+        break;
+      case 'search':
+        router.goToSearch();
         break;
       case 'settings':
         router.goToSettings();
@@ -80,6 +85,28 @@ export default function MainLayout({
     }
   };
 
+  const isCurrentScreen = (screenAction: string) => {
+    switch (screenAction) {
+      case 'home':
+        return currentScreen === 'MAIN_HOME';
+      case 'search':
+        return currentScreen === 'MAIN_SEARCH';
+      case 'settings':
+        return currentScreen === 'MAIN_SETTINGS';
+      case 'chat':
+        return currentScreen === 'MAIN_CHAT_DETAIL';
+      default:
+        return false;
+    }
+  };
+
+  const drawerIcons = [
+    { key: 'home', icon: 'home', action: 'home' },
+    { key: 'search', icon: 'search', action: 'search' },
+    { key: 'settings', icon: 'settings', action: 'settings' },
+    { key: 'logout', icon: 'log-out', action: 'logout' },
+  ];
+
   return (
     <View style={{ flex: 1 }}>
       {/* Blurred Background */}
@@ -100,56 +127,31 @@ export default function MainLayout({
               justifyContent: 'flex-end',
             }}
           >
-            {/* User Profile */}
-            <Pressable onPress={() => handleMenuPress('home')}>
-              <View
-                style={{
-                  borderRadius: _borderRadius / 2,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  height: _sideIconSize,
-                  width: _sideIconSize,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginTop: _spacing,
-                }}
-              >
-                <Feather name="home" size={24} color="#fff" style={{ opacity: 0.5 }} />
-              </View>
-            </Pressable>
-
-            {/* Settings */}
-            <Pressable onPress={() => handleMenuPress('settings')}>
-              <View
-                style={{
-                  borderRadius: _borderRadius / 2,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  height: _sideIconSize,
-                  width: _sideIconSize,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginTop: _spacing,
-                }}
-              >
-                <Feather name="settings" size={24} color="#fff" style={{ opacity: 0.5 }} />
-              </View>
-            </Pressable>
-
-            {/* Logout */}
-            <Pressable onPress={() => handleMenuPress('logout')}>
-              <View
-                style={{
-                  borderRadius: _borderRadius / 2,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  height: _sideIconSize,
-                  width: _sideIconSize,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginTop: _spacing,
-                }}
-              >
-                <Feather name="log-out" size={24} color="#fff" style={{ opacity: 0.5 }} />
-              </View>
-            </Pressable>
+            {drawerIcons.map((item) => {
+              const isActive = isCurrentScreen(item.action);
+              return (
+                <Pressable key={item.key} onPress={() => handleMenuPress(item.action)}>
+                  <View
+                    style={{
+                      borderRadius: _borderRadius / 2,
+                      backgroundColor: isActive ? '#1DB954' : 'rgba(255,255,255,0.2)',
+                      height: _sideIconSize,
+                      width: _sideIconSize,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginTop: _spacing,
+                    }}
+                  >
+                    <Feather
+                      name={item.icon as any}
+                      size={24}
+                      color="#fff"
+                      style={{ opacity: isActive ? 1 : 0.5 }}
+                    />
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 

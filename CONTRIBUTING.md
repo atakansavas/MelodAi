@@ -7,7 +7,7 @@ Thank you for considering contributing to Spoti! We're excited to have you as pa
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/yourusername/spoti.git
+   git clone https://github.com/atakansavas/spoti.git
    cd spoti
    ```
 3. **Install dependencies**:
@@ -23,12 +23,14 @@ Thank you for considering contributing to Spoti! We're excited to have you as pa
 ## 📝 Development Guidelines
 
 ### Code Style
+
 - We use **ESLint** and **Prettier** for code formatting
 - Run `npm run lint` to check for linting issues
 - TypeScript is mandatory - no `any` types without justification
 - Follow existing naming conventions
 
 ### Commit Messages
+
 We use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 ```
@@ -41,6 +43,7 @@ style(ui): improve button component styling
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -50,6 +53,7 @@ Types:
 - `chore`: Changes to build process or auxiliary tools
 
 ### File Structure
+
 When adding new files, follow the established structure:
 
 ```
@@ -93,12 +97,14 @@ For feature requests:
 When contributing new AI agents or improving existing ones:
 
 ### Agent Guidelines
+
 - Each agent should have a **clear specialty** and personality
 - **System prompts** should be well-structured and tested
 - **Response processing** should be consistent with the agent's personality
 - Add the agent to the **registry** in `agents/index.ts`
 
 ### Adding a New Agent
+
 1. Create the agent class in `agents/music/YourAgent.ts`
 2. Create prompt templates in `agents/prompts/your-agent.ts`
 3. Register the agent in `agents/index.ts`
@@ -106,6 +112,7 @@ When contributing new AI agents or improving existing ones:
 5. Update documentation
 
 Example agent structure:
+
 ```typescript
 import { BaseAgent, MusicContext, AgentPersonality } from '@/types/agent';
 
@@ -115,11 +122,11 @@ export class YourAgent extends BaseAgent {
   description = 'What this agent does';
   avatar = '🎭';
   systemPrompt = 'Your system prompt here';
-  
+
   personality: AgentPersonality = {
     tone: 'friendly',
     expertise: ['music theory', 'composition'],
-    traits: ['analytical', 'helpful']
+    traits: ['analytical', 'helpful'],
   };
 
   specialties = ['Music analysis', 'Composition tips'];
@@ -133,6 +140,7 @@ export class YourAgent extends BaseAgent {
 ## 🔧 Technical Contributions
 
 ### Areas We Need Help With
+
 - **UI/UX improvements**: Better user experience design
 - **Performance optimization**: Faster app loading and smoother animations
 - **Accessibility**: Making the app more accessible
@@ -142,12 +150,14 @@ export class YourAgent extends BaseAgent {
 ### Setting Up Development Environment
 
 1. **Required tools**:
+
    - Node.js 18+
    - Expo CLI
    - iOS Simulator (macOS) or Android Emulator
    - VS Code (recommended)
 
 2. **Recommended VS Code extensions**:
+
    - ES7+ React/Redux/React-Native snippets
    - TypeScript Importer
    - Prettier - Code formatter
@@ -162,16 +172,19 @@ export class YourAgent extends BaseAgent {
 ## 📱 Platform-Specific Contributions
 
 ### iOS
+
 - Test on multiple iOS versions
 - Follow iOS Human Interface Guidelines
 - Consider iPhone and iPad layouts
 
 ### Android
+
 - Test on different Android versions and screen sizes
 - Follow Material Design principles
 - Consider various Android manufacturers
 
 ### Web
+
 - Ensure responsive design
 - Test on different browsers
 - Consider web-specific features
@@ -185,6 +198,7 @@ export class YourAgent extends BaseAgent {
 5. **Update your branch** if requested
 
 ### What We Look For
+
 - **Code quality**: Clean, readable, and maintainable code
 - **Performance**: Efficient algorithms and minimal re-renders
 - **Accessibility**: Proper ARIA labels and keyboard navigation
@@ -194,6 +208,7 @@ export class YourAgent extends BaseAgent {
 ## 🌟 Recognition
 
 Contributors will be recognized in:
+
 - README.md contributors section
 - Release notes for significant contributions
 - Project documentation

@@ -1,5 +1,10 @@
 import { API_CONFIG } from '../../constants/config';
-import { SpotifyPlayHistory, SpotifyUser } from '../../types/spotify';
+import {
+  SpotifyPlayHistory,
+  SpotifySearchResponse,
+  SpotifyTrack,
+  SpotifyUser,
+} from '../../types/spotify';
 
 import { SpotifyAuthService } from './auth';
 
@@ -82,13 +87,13 @@ export class SpotifyApiService {
     return this.makeAuthenticatedRequest(`/playlists/${playlistId}/tracks?limit=${limit}`);
   }
 
-  async searchTracks(query: string, limit: number = 20) {
+  async searchTracks(query: string, limit: number = 20): Promise<SpotifySearchResponse> {
     return this.makeAuthenticatedRequest(
       `/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`
     );
   }
 
-  async getTrack(trackId: string) {
+  async getTrack(trackId: string): Promise<SpotifyTrack> {
     return this.makeAuthenticatedRequest(`/tracks/${trackId}`);
   }
 
@@ -98,5 +103,15 @@ export class SpotifyApiService {
 
   async getAlbum(albumId: string) {
     return this.makeAuthenticatedRequest(`/albums/${albumId}`);
+  }
+
+  async startPlayback(trackId: string) {
+    const trackUri = `spotify:track:${trackId}`;
+    return this.makeAuthenticatedRequest('/me/player/play', {
+      method: 'PUT',
+      body: JSON.stringify({
+        uris: [trackUri],
+      }),
+    });
   }
 }

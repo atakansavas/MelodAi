@@ -16,6 +16,7 @@ export default function LoginScreen() {
   const handleSpotifyLogin = async () => {
     setIsAuthenticating(true);
     setLoading(true);
+    console.log('🚀 ~ handleSpotifyLogin ~ isAuthenticating:', isAuthenticating);
 
     try {
       const request = authService.getAuthRequest();

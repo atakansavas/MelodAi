@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,9 @@ import {
   View,
 } from 'react-native';
 
+import { SpotifyApiService } from '@services/spotify';
+
+import { SpotifyTrack } from '../../../types/spotify';
 import { useRouter } from '../../hooks/useRouter';
 
 interface Message {
@@ -43,6 +47,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const trackName = params?.trackName || 'Müzik';
   const artistName = params?.artistName || '';
@@ -94,7 +99,9 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         'Müzik türleri arasında geçiş yapmak her zaman ilginç. Hangi türleri keşfetmek istiyorsunuz?',
       ];
 
-      const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+      const randomResponse =
+        aiResponses[Math.floor(Math.random() * aiResponses.length)] ||
+        'Merhaba! Size nasıl yardımcı olabilirim?';
 
       const aiMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -120,6 +127,42 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handlePlayAction = async () => {
+    setIsModalVisible(false);
+
+    try {
+      const spotifyApi = SpotifyApiService.getInstance();
+
+      // Check if we have a trackId
+      if (!params?.trackId) {
+        Alert.alert('Hata', 'Şarkı bilgisi bulunamadı.');
+        return;
+      }
+
+      // Get track details first
+      const trackDetails: SpotifyTrack = await spotifyApi.getTrack(params.trackId);
+
+      // Start playback with the track
+      await spotifyApi.startPlayback(params.trackId);
+
+      Alert.alert(
+        '🎵 Çalınıyor',
+        `${trackDetails.name} - ${trackDetails.artists.map((artist) => artist.name).join(', ')}`
+      );
+    } catch (error) {
+      console.error('Error playing track:', error);
+      Alert.alert(
+        'Hata',
+        'Şarkı çalınırken bir hata oluştu. Spotify Premium hesabınızın aktif olduğundan emin olun.'
+      );
+    }
+  };
+
+  const handleComingSoonAction = () => {
+    setIsModalVisible(false);
+    Alert.alert('🚧 Yakında', 'Bu özellik yakında gelecek!');
   };
 
   const renderMessage = (message: Message) => (
@@ -178,7 +221,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
             </Text>
           )}
         </View>
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity style={styles.moreButton} onPress={() => setIsModalVisible(true)}>
           <Feather name="more-vertical" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -223,6 +266,34 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Action Modal */}
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalButton} onPress={handlePlayAction}>
+              <Feather name="play" size={20} color="#fff" />
+              <Text style={styles.modalButtonText}>Çal</Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalDivider} />
+
+            <TouchableOpacity style={styles.modalButton} onPress={handleComingSoonAction}>
+              <Feather name="clock" size={20} color="#fff" />
+              <Text style={styles.modalButtonText}>Yakında</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -360,5 +431,39 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: 'rgba(29, 185, 84, 0.3)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#282828',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: '100%',
+    marginVertical: 15,
   },
 });
