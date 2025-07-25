@@ -52,12 +52,75 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   const trackName = params?.trackName || 'Müzik';
   const artistName = params?.artistName || '';
 
+  // Check if there are any user messages
+  const hasUserMessages = messages.some((message) => message.isUser);
+
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
+
+  const handleQuickAction = async (actionText: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: actionText,
+      isUser: true,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    // Add loading message
+    const loadingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: 'AI düşünüyor...',
+      isUser: false,
+      timestamp: new Date(),
+      isLoading: true,
+    };
+
+    setMessages((prev) => [...prev, loadingMessage]);
+
+    try {
+      // Simulate AI response (replace with actual API call)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const aiResponses = [
+        'Bu şarkı gerçekten harika! Müzik teorisi açısından bakarsak, bu parça çok güzel bir melodi yapısına sahip.',
+        'Bu sanatçının diğer eserlerini de dinlemenizi öneririm. Benzer tarzda başka önerilerim de var.',
+        'Müzik tarihinde bu tür eserlerin önemli bir yeri var. Hangi dönem hakkında daha fazla bilgi almak istersiniz?',
+        'Bu şarkının sözleri gerçekten derin anlamlar taşıyor. Sanatçının hayatından izler bulabilirsiniz.',
+        'Müzik prodüksiyonu açısından bu parça çok başarılı. Hangi teknik detaylar hakkında konuşmak istersiniz?',
+        'Bu tür müzik dinlemek ruh halinizi nasıl etkiliyor? Müziğin psikolojik etkileri hakkında konuşabiliriz.',
+        'Bu sanatçının kariyer yolculuğu gerçekten ilham verici. Başka hangi sanatçıları takip ediyorsunuz?',
+        'Müzik türleri arasında geçiş yapmak her zaman ilginç. Hangi türleri keşfetmek istiyorsunuz?',
+      ];
+
+      const randomResponse =
+        aiResponses[Math.floor(Math.random() * aiResponses.length)] ||
+        'Merhaba! Size nasıl yardımcı olabilirim?';
+
+      const aiMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: randomResponse,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      Alert.alert('Hata', 'AI yanıtı alınırken bir hata oluştu. Lütfen tekrar deneyin.');
+
+      // Remove loading message
+      setMessages((prev) => prev.filter((msg) => !msg.isLoading));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -201,6 +264,43 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     </View>
   );
 
+  const renderQuickActions = () => (
+    <View style={styles.quickActionsContainer}>
+      <Text style={styles.quickActionsTitle}>Hızlı Seçenekler</Text>
+      <TouchableOpacity
+        style={styles.quickActionButton}
+        onPress={() => handleQuickAction('Şarkı sözleri')}
+        disabled={isLoading}
+      >
+        <Feather name="music" size={20} color="#fff" />
+        <Text style={styles.quickActionText}>Şarkı sözleri</Text>
+        <Text style={styles.quickActionSubtext}>
+          Şarkı sözlerini ve anlamlarını merak mı ediyorsunuz?
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.quickActionButton}
+        onPress={() => handleQuickAction('Hikayesi')}
+        disabled={isLoading}
+      >
+        <Feather name="book-open" size={20} color="#fff" />
+        <Text style={styles.quickActionText}>Hikayesi</Text>
+        <Text style={styles.quickActionSubtext}>Bu şarkıyı kim nasıl oluşturdu sizce?</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.quickActionButton}
+        onPress={() => handleQuickAction('Rastgele')}
+        disabled={isLoading}
+      >
+        <Feather name="shuffle" size={20} color="#fff" />
+        <Text style={styles.quickActionText}>Rastgele</Text>
+        <Text style={styles.quickActionSubtext}>Bu şarkının tarzı ne?</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -234,38 +334,43 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         {messages.map(renderMessage)}
+
+        {/* Quick Actions - only show if no user messages */}
+        {!hasUserMessages && !isLoading && renderQuickActions()}
       </ScrollView>
 
-      {/* Input Area */}
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Müzik hakkında bir şeyler yazın..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            onSubmitEditing={handleSendMessage}
-            returnKeyType="send"
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim() || isLoading}
-          >
-            <Feather
-              name="send"
-              size={20}
-              color={!inputText.trim() || isLoading ? 'rgba(255,255,255,0.3)' : '#fff'}
+      {/* Input Area - only show if there are user messages */}
+      {hasUserMessages && (
+        <View style={styles.inputContainer}>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Müzik hakkında bir şeyler yazın..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+              onSubmitEditing={handleSendMessage}
+              returnKeyType="send"
             />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSendMessage}
+              disabled={!inputText.trim() || isLoading}
+            >
+              <Feather
+                name="send"
+                size={20}
+                color={!inputText.trim() || isLoading ? 'rgba(255,255,255,0.3)' : '#fff'}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Action Modal */}
       <Modal
@@ -398,6 +503,40 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.5)',
     marginHorizontal: 2,
+  },
+  quickActionsContainer: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  quickActionsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  quickActionButton: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  quickActionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 12,
+    flex: 1,
+  },
+  quickActionSubtext: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    marginLeft: 12,
+    flex: 2,
   },
   inputContainer: {
     paddingHorizontal: 16,

@@ -9,106 +9,9 @@ import { useRouter } from '../../hooks/useRouter';
 export default function OnboardingScreen() {
   const router = useRouter();
   const { setOnboardingCompleted } = useAppStore();
-  const [currentStep, setCurrentStep] = useState(0);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
 
   const agents = agentRegistry.getAllAgents();
-
-  const onboardingSteps = [
-    {
-      title: 'Hoş Geldiniz! 🎉',
-      description: 'Melodia ile müziğinizin hikayelerini keşfetmeye hazır mısınız?',
-      content: (
-        <View style={styles.welcomeContent}>
-          <Text style={styles.welcomeText}>
-            Spotify dinleme geçmişinizdeki şarkılarla AI asistanlarımız ile sohbet edebileceksiniz.
-            Her şarkının kendine özgü bir hikayesi var ve biz bu hikayeleri sizinle paylaşacağız.
-          </Text>
-          <View style={styles.benefitsList}>
-            <Text style={styles.benefitItem}>🎵 Şarkılarınızın hikayelerini öğrenin</Text>
-            <Text style={styles.benefitItem}>🧠 Müziğin duygusal etkilerini keşfedin</Text>
-            <Text style={styles.benefitItem}>📚 Sanatçıların yaşadıklarını anlayın</Text>
-            <Text style={styles.benefitItem}>✍️ Şarkı sözlerinin derinliklerini görün</Text>
-          </View>
-        </View>
-      ),
-    },
-    {
-      title: 'AI Asistanlarımızla Tanışın 🤖',
-      description: 'Hangi asistanlarla sohbet etmek istiyorsunuz?',
-      content: (
-        <ScrollView style={styles.agentsContainer}>
-          {agents.map((agent) => (
-            <TouchableOpacity
-              key={agent.id}
-              style={[
-                styles.agentCard,
-                selectedAgents.includes(agent.id) && styles.agentCardSelected,
-              ]}
-              onPress={() => {
-                if (selectedAgents.includes(agent.id)) {
-                  setSelectedAgents(selectedAgents.filter((id) => id !== agent.id));
-                } else {
-                  setSelectedAgents([...selectedAgents, agent.id]);
-                }
-              }}
-            >
-              <Text style={styles.agentAvatar}>{agent.avatar}</Text>
-              <View style={styles.agentInfo}>
-                <Text style={styles.agentName}>{agent.name}</Text>
-                <Text style={styles.agentDescription}>{agent.description}</Text>
-                <View style={styles.agentSpecialties}>
-                  {agent.specialties.slice(0, 2).map((specialty, index) => (
-                    <Text key={index} style={styles.agentSpecialty}>
-                      {specialty}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      ),
-    },
-    {
-      title: 'Hazırsınız! 🚀',
-      description: 'Şimdi müziğinizin hikayelerini keşfetmeye başlayalım!',
-      content: (
-        <View style={styles.finalContent}>
-          <Text style={styles.finalText}>
-            Spotify dinleme geçmişinizden bir şarkı seçin ve seçtiğiniz AI asistanlarla sohbet
-            etmeye başlayın.
-          </Text>
-          <View style={styles.selectedAgentsPreview}>
-            <Text style={styles.selectedAgentsTitle}>Seçtiğiniz asistanlar:</Text>
-            {selectedAgents.length === 0 ? (
-              <Text style={styles.noAgentsText}>Henüz bir asistan seçmediniz</Text>
-            ) : (
-              <View style={styles.selectedAgentsList}>
-                {selectedAgents.map((agentId) => {
-                  const agent = agentRegistry.getAgent(agentId);
-                  return agent ? (
-                    <View key={agentId} style={styles.selectedAgentItem}>
-                      <Text style={styles.selectedAgentAvatar}>{agent.avatar}</Text>
-                      <Text style={styles.selectedAgentName}>{agent.name}</Text>
-                    </View>
-                  ) : null;
-                })}
-              </View>
-            )}
-          </View>
-        </View>
-      ),
-    },
-  ];
-
-  const handleNext = () => {
-    if (currentStep < onboardingSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleComplete();
-    }
-  };
 
   const handleComplete = async () => {
     if (selectedAgents.length === 0) {
@@ -137,54 +40,96 @@ export default function OnboardingScreen() {
     router.goToHome();
   };
 
-  const isLastStep = currentStep === onboardingSteps.length - 1;
-  const step = onboardingSteps[currentStep];
-
-  if (!step) {
-    return null;
-  }
-
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{step.title}</Text>
-        <Text style={styles.description}>{step.description}</Text>
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Hoş Geldiniz! 🎉</Text>
+          <Text style={styles.welcomeSubtitle}>
+            Melodia ile müziğinizin hikayelerini keşfetmeye hazır mısınız?
+          </Text>
 
-      {/* Progress */}
-      <View style={styles.progressContainer}>
-        {onboardingSteps.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.progressDot,
-              index === currentStep && styles.progressDotActive,
-              index < currentStep && styles.progressDotCompleted,
-            ]}
-          />
-        ))}
-      </View>
+          <Text style={styles.welcomeText}>
+            Spotify dinleme geçmişinizdeki şarkılarla AI asistanlarımız ile sohbet edebileceksiniz.
+            Her şarkının kendine özgü bir hikayesi var ve biz bu hikayeleri sizinle paylaşacağız.
+          </Text>
 
-      {/* Content */}
-      <View style={styles.content}>{step.content}</View>
+          <View style={styles.benefitsList}>
+            <Text style={styles.benefitItem}>🎵 Şarkılarınızın hikayelerini öğrenin</Text>
+            <Text style={styles.benefitItem}>🧠 Müziğin duygusal etkilerini keşfedin</Text>
+            <Text style={styles.benefitItem}>📚 Sanatçıların yaşadıklarını anlayın</Text>
+            <Text style={styles.benefitItem}>✍️ Şarkı sözlerinin derinliklerini görün</Text>
+          </View>
+        </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        {currentStep > 0 && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setCurrentStep(currentStep - 1)}
-          >
-            <Text style={styles.backButtonText}>Geri</Text>
-          </TouchableOpacity>
-        )}
+        {/* Agent Selection Section */}
+        <View style={styles.agentsSection}>
+          <Text style={styles.agentsTitle}>AI Asistanlarımızla Tanışın 🤖</Text>
+          <Text style={styles.agentsSubtitle}>Hangi asistanlarla sohbet etmek istiyorsunuz?</Text>
 
-        <TouchableOpacity
-          style={[styles.nextButton, currentStep === 0 && styles.nextButtonFull]}
-          onPress={handleNext}
-        >
-          <Text style={styles.nextButtonText}>{isLastStep ? 'Başlayalım!' : 'Devam Et'}</Text>
+          <View style={styles.agentsContainer}>
+            {agents.map((agent) => (
+              <TouchableOpacity
+                key={agent.id}
+                style={[
+                  styles.agentCard,
+                  selectedAgents.includes(agent.id) && styles.agentCardSelected,
+                ]}
+                onPress={() => {
+                  if (selectedAgents.includes(agent.id)) {
+                    setSelectedAgents(selectedAgents.filter((id) => id !== agent.id));
+                  } else {
+                    setSelectedAgents([...selectedAgents, agent.id]);
+                  }
+                }}
+              >
+                <Text style={styles.agentAvatar}>{agent.avatar}</Text>
+                <View style={styles.agentInfo}>
+                  <Text style={styles.agentName}>{agent.name}</Text>
+                  <Text style={styles.agentDescription}>{agent.description}</Text>
+                  <View style={styles.agentSpecialties}>
+                    {agent.specialties.slice(0, 2).map((specialty, index) => (
+                      <Text key={index} style={styles.agentSpecialty}>
+                        {specialty}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Selected Agents Preview */}
+          <View style={styles.selectedAgentsPreview}>
+            <Text style={styles.selectedAgentsTitle}>Seçtiğiniz asistanlar:</Text>
+            {selectedAgents.length === 0 ? (
+              <Text style={styles.noAgentsText}>Henüz bir asistan seçmediniz</Text>
+            ) : (
+              <View style={styles.selectedAgentsList}>
+                {selectedAgents.map((agentId) => {
+                  const agent = agentRegistry.getAgent(agentId);
+                  return agent ? (
+                    <View key={agentId} style={styles.selectedAgentItem}>
+                      <Text style={styles.selectedAgentAvatar}>{agent.avatar}</Text>
+                      <Text style={styles.selectedAgentName}>{agent.name}</Text>
+                    </View>
+                  ) : null;
+                })}
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Bottom Action */}
+      <View style={styles.bottomAction}>
+        <TouchableOpacity style={styles.startButton} onPress={handleComplete}>
+          <Text style={styles.startButtonText}>Başlayalım! 🚀</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -196,50 +141,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  header: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for bottom action
+  },
+  welcomeSection: {
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
+  welcomeTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  description: {
-    fontSize: 16,
+  welcomeSubtitle: {
+    fontSize: 18,
     color: '#fff',
     textAlign: 'center',
-    opacity: 0.8,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 32,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#333',
-    marginHorizontal: 4,
-  },
-  progressDotActive: {
-    backgroundColor: '#1DB954',
-  },
-  progressDotCompleted: {
-    backgroundColor: '#1DB954',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  welcomeContent: {
-    flex: 1,
-    justifyContent: 'center',
+    opacity: 0.9,
+    marginBottom: 24,
   },
   welcomeText: {
     fontSize: 16,
@@ -258,8 +183,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     opacity: 0.9,
   },
+  agentsSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  agentsTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  agentsSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+    opacity: 0.8,
+    marginBottom: 32,
+  },
   agentsContainer: {
-    flex: 1,
+    marginBottom: 32,
   },
   agentCard: {
     flexDirection: 'row',
@@ -308,18 +251,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     opacity: 0.8,
   },
-  finalContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  finalText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-    opacity: 0.8,
-  },
   selectedAgentsPreview: {
     backgroundColor: '#111',
     padding: 16,
@@ -360,37 +291,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  actions: {
-    flexDirection: 'row',
+  bottomAction: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 24,
     paddingVertical: 32,
-    gap: 12,
+    backgroundColor: '#000',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
   },
-  backButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#333',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  nextButton: {
-    flex: 2,
+  startButton: {
     paddingVertical: 16,
     borderRadius: 12,
     backgroundColor: '#1DB954',
     alignItems: 'center',
   },
-  nextButtonFull: {
-    flex: 1,
-  },
-  nextButtonText: {
+  startButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
