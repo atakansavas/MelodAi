@@ -14,6 +14,7 @@ export const API_CONFIG = {
   SPOTIFY_BASE_URL: 'https://api.spotify.com/v1',
   AI_API_URL: process.env.EXPO_PUBLIC_AI_API_URL || '',
   AI_API_KEY: process.env.EXPO_PUBLIC_AI_API_KEY || '',
+  SERVICE_URL: process.env.EXPO_PUBLIC_SERVICE_URL || '',
 };
 
 export const STORAGE_KEYS = {

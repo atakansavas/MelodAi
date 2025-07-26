@@ -14,7 +14,9 @@ import {
 } from 'react-native';
 
 import { SpotifyApiService } from '@services/spotify';
+import { SpotifyAuthService } from '@services/spotify/auth';
 
+import { API_CONFIG } from '../../../constants/config';
 import { SpotifyTrack } from '../../../types/spotify';
 import { useRouter } from '../../hooks/useRouter';
 
@@ -54,6 +56,74 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
 
   // Check if there are any user messages
   const hasUserMessages = messages.some((message) => message.isUser);
+
+  // Helper method for making service calls with Spotify token
+  const makeServiceCall = async (
+    endpoint: string,
+    options: {
+      method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+      body?: any;
+      headers?: Record<string, string>;
+    } = {}
+  ) => {
+    try {
+      const authService = SpotifyAuthService.getInstance();
+      const accessToken = await authService.getAccessToken();
+
+      if (!accessToken) {
+        throw new Error('No valid Spotify access token available');
+      }
+
+      if (!API_CONFIG.SERVICE_URL) {
+        throw new Error('SERVICE_URL not configured');
+      }
+
+      const url = `${API_CONFIG.SERVICE_URL}${endpoint}`;
+      const { method = 'GET', body, headers = {} } = options;
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          ...headers,
+        },
+        ...(body && { body: JSON.stringify(body) }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Service call failed: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Service call error:', error);
+      throw error;
+    }
+  };
+
+  // Start chat method
+  const startChat = async (trackId?: string, message?: string) => {
+    try {
+      const chatData = {
+        trackId: trackId || params?.trackId,
+        trackName: params?.trackName,
+        artistName: params?.artistName,
+        initialMessage: message,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await makeServiceCall('/chat/start', {
+        method: 'POST',
+        body: chatData,
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -291,12 +361,12 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
 
       <TouchableOpacity
         style={styles.quickActionButton}
-        onPress={() => handleQuickAction('Rastgele')}
+        onPress={() => handleQuickAction('Bu Nedir?')}
         disabled={isLoading}
       >
-        <Feather name="shuffle" size={20} color="#fff" />
-        <Text style={styles.quickActionText}>Rastgele</Text>
-        <Text style={styles.quickActionSubtext}>Bu şarkının tarzı ne?</Text>
+        <Feather name="info" size={20} color="#fff" />
+        <Text style={styles.quickActionText}>Bu Nedir?</Text>
+        <Text style={styles.quickActionSubtext}>Neler yapabilirim?</Text>
       </TouchableOpacity>
     </View>
   );

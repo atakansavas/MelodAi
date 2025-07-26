@@ -69,8 +69,7 @@ export default function MainLayout({
         console.log('Favorites pressed');
         break;
       case 'history':
-        // TODO: Navigate to history
-        console.log('History pressed');
+        router.goToHistory();
         break;
       case 'logout':
         handleLogout();
@@ -91,6 +90,8 @@ export default function MainLayout({
         return currentScreen === 'MAIN_HOME';
       case 'search':
         return currentScreen === 'MAIN_SEARCH';
+      case 'history':
+        return currentScreen === 'MAIN_HISTORY';
       case 'settings':
         return currentScreen === 'MAIN_SETTINGS';
       case 'chat':
@@ -103,6 +104,7 @@ export default function MainLayout({
   const drawerIcons = [
     { key: 'home', icon: 'home', action: 'home' },
     { key: 'search', icon: 'search', action: 'search' },
+    { key: 'history', icon: 'clock', action: 'history' },
     { key: 'settings', icon: 'settings', action: 'settings' },
     { key: 'logout', icon: 'log-out', action: 'logout' },
   ];
@@ -261,7 +263,7 @@ export default function MainLayout({
             />
             <MotiView
               animate={{
-                rotate: isDrawerVisible ? '90deg' : '0deg',
+                rotate: isDrawerVisible ? '180deg' : '0deg',
               }}
               transition={{
                 type: 'timing',
@@ -279,7 +281,7 @@ export default function MainLayout({
                 bottom: _spacing,
               }}
             >
-              <Feather name="plus" size={24} color="#fff" />
+              <Feather name={isDrawerVisible ? 'x' : 'menu'} size={24} color="#fff" />
             </MotiView>
           </>
         </TouchableOpacity>

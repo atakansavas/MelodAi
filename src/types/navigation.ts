@@ -4,7 +4,8 @@ export type ScreenName =
   | 'MAIN_HOME'
   | 'MAIN_SEARCH'
   | 'MAIN_CHAT_DETAIL'
-  | 'MAIN_SETTINGS';
+  | 'MAIN_SETTINGS'
+  | 'MAIN_HISTORY';
 
 export interface NavigationState {
   currentScreen: ScreenName;

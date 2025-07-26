@@ -3,6 +3,7 @@ import React from 'react';
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import ChatDetailScreen from '../screens/main/ChatDetailScreen';
+import HistoryScreen from '../screens/main/HistoryScreen';
 import HomeScreen from '../screens/main/HomeScreen';
 import SearchScreen from '../screens/main/SearchScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
@@ -16,6 +17,7 @@ export const ScreenRegistry: Record<ScreenName, React.ComponentType<any>> = {
   MAIN_SEARCH: SearchScreen,
   MAIN_CHAT_DETAIL: ChatDetailScreen,
   MAIN_SETTINGS: SettingsScreen,
+  MAIN_HISTORY: HistoryScreen,
 };
 
 export const getScreenComponent = (screenName: ScreenName): React.ComponentType<any> => {

@@ -16,6 +16,7 @@ export const useRouter = () => {
     [navigate]
   );
   const goToSettings = useCallback(() => navigate('MAIN_SETTINGS'), [navigate]);
+  const goToHistory = useCallback(() => navigate('MAIN_HISTORY'), [navigate]);
 
   const router = useMemo(
     () => ({
@@ -40,6 +41,7 @@ export const useRouter = () => {
       goToSearch,
       goToChatDetail,
       goToSettings,
+      goToHistory,
     }),
     [
       navigate,
@@ -52,6 +54,7 @@ export const useRouter = () => {
       goToSearch,
       goToChatDetail,
       goToSettings,
+      goToHistory,
     ]
   );
 
