@@ -214,37 +214,22 @@ export default function LoginScreen() {
         },
       };
 
-      console.log('Registering with MelodAI:', JSON.stringify(registrationData, null, 2));
+      const melodAiResponse = await MelodAiService.getInstance().userRegister(registrationData);
 
-      try {
-        const melodAiResponse = await MelodAiService.getInstance().userRegister(registrationData);
-
-        // Step 8: Save MelodAI response data
-        if (melodAiResponse) {
-          await setAuthData(melodAiResponse);
-        }
-      } catch (melodAiError) {
-        console.warn(
-          'MelodAI registration failed, but continuing with Spotify auth:',
-          melodAiError
-        );
-        // Continue even if MelodAI registration fails
+      // Step 8: Save MelodAI response data
+      if (melodAiResponse) {
+        await setAuthData(melodAiResponse.data);
       }
 
+      console.log('🚀 ~ handleSpotifyLogin ~ melodAiResponse:', melodAiResponse);
       // Step 9: Refresh auth state and navigate
       await refreshAuthState();
 
-      // Show success message and navigate
-      Alert.alert(
-        '🎉 Login Successful!',
-        'You have successfully logged in with your Spotify account.',
-        [
-          {
-            text: 'Continue',
-            onPress: () => router.goToOnboarding(),
-          },
-        ]
-      );
+      if (melodAiResponse.data.is_new_user) {
+        router.goToOnboarding();
+      } else {
+        router.goToHome();
+      }
     } catch (error: any) {
       const errorMessage = error?.message || 'An unexpected error occurred during login';
       handleAuthError(errorMessage, error);
