@@ -1,10 +1,41 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-google-fonts/lato';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
+import Constants from 'expo-constants';
+import { MotiView, useDynamicAnimation } from 'moti';
+import { useCallback, useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { SpotifyApiService, SpotifyAuthService } from '@services/spotify';
-import { useAuthStore } from '@store/auth';
-
+import { SpotifyApiService, SpotifyAuthService } from '../../../services/spotify';
+import { useAuthStore } from '../../../store';
 import { useRouter } from '../../hooks/useRouter';
+
+const { width, height } = Dimensions.get('screen');
+
+const _logoSize = Math.max(width * 0.12, 56);
+const _spacing = 16;
+
+const MelodAiLogo = () => {
+  return (
+    <View style={styles.logo}>
+      <View style={styles.logoContainer}>
+        <Ionicons name="musical-notes" size={_logoSize * 0.6} color="#1DB954" />
+        <Text style={styles.logoText}>MelodAi</Text>
+      </View>
+    </View>
+  );
+};
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -13,18 +44,26 @@ export default function LoginScreen() {
   const authService = SpotifyAuthService.getInstance();
   const apiService = SpotifyApiService.getInstance();
 
-  const handleSpotifyLogin = async () => {
+  const [fontsLoaded] = useFonts({
+    LatoRegular: Lato_400Regular,
+    LatoBold: Lato_700Bold,
+    LatoLight: Lato_300Light,
+  });
+
+  const dynamicAnimation = useDynamicAnimation(() => ({
+    opacity: 0,
+    translateY: 40,
+  }));
+
+  const handleSpotifyLogin = useCallback(async () => {
     setIsAuthenticating(true);
     setLoading(true);
-    console.log('🚀 ~ handleSpotifyLogin ~ isAuthenticating:', isAuthenticating);
 
     try {
       const request = authService.getAuthRequest();
-      console.log('🚀 ~ handleSpotifyLogin ~ request:', request);
       const result = await request.promptAsync({
         authorizationEndpoint: 'https://accounts.spotify.com/authorize',
       });
-      console.log('🚀 ~ handleSpotifyLogin ~ result:', result);
 
       if (result.type === 'success') {
         const tokenResponse = await authService.handleAuthResponse(result, request);
@@ -34,92 +73,114 @@ export default function LoginScreen() {
           try {
             const user = await apiService.getCurrentUser();
             setUser(user);
-            console.log('User data:', user);
           } catch (userError) {
             console.error('Failed to get user data:', userError);
           }
 
-          Alert.alert('🎉 Giriş Başarılı!', 'Spotify hesabınıza başarıyla giriş yaptınız.', [
-            {
-              text: 'Devam Et',
-              onPress: () => router.goToOnboarding(),
-            },
-          ]);
+          router.goToOnboarding();
         } else {
-          Alert.alert('Hata', 'Giriş yapılırken bir hata oluştu.');
+          Alert.alert('Error', 'An error occurred during login.');
         }
       } else {
-        Alert.alert('İptal', 'Giriş işlemi iptal edildi.');
+        Alert.alert('Cancelled', 'Login process was cancelled.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Hata', 'Giriş yapılırken bir hata oluştu.');
+      Alert.alert('Error', 'An error occurred during login.');
     } finally {
       setIsAuthenticating(false);
       setLoading(false);
     }
-  };
+  }, [authService, apiService, setLoading, setUser, router]);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo/Title */}
-        <View style={styles.header}>
-          <Text style={styles.logo}>🎵 Melodia</Text>
-          <Text style={styles.subtitle}>Müziğinizin hikayelerini keşfedin</Text>
+    <GestureHandlerRootView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+        {/* Background Video */}
+        <Video
+          shouldPlay
+          isLooping
+          source={{
+            uri: 'https://user-images.githubusercontent.com/2805320/126218253-bae143d4-ed8e-4dd0-8ae6-eb0065883e6c.mp4',
+          }}
+          resizeMode={ResizeMode.COVER}
+          style={[StyleSheet.absoluteFillObject, styles.videoOverlay]}
+        />
+
+        {/* Overlay */}
+        <View style={styles.overlay} />
+
+        {/* Main Content */}
+        <View style={styles.mainContent}>
+          <View style={styles.brandSection}>
+            <View style={styles.brandContainer}>
+              <Ionicons name="musical-notes" size={48} color="#1DB954" />
+              <Text style={styles.brandText}>MelodAi</Text>
+            </View>
+            <Text style={styles.tagline}>Your AI-powered{'\n'}music companion</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* Features Section */}
+          <MotiView state={dynamicAnimation} delay={200} style={styles.featuresSection}>
+            <Text style={styles.featuresTitle}>Discover Your Music</Text>
+            <View style={styles.featuresGrid}>
+              <View style={styles.featureItem}>
+                <Ionicons name="book-outline" size={24} color="#1DB954" />
+                <Text style={styles.featureText}>Song Stories</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="analytics-outline" size={24} color="#1DB954" />
+                <Text style={styles.featureText}>Music Analysis</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="create-outline" size={24} color="#1DB954" />
+                <Text style={styles.featureText}>Lyric Insights</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="heart-outline" size={24} color="#1DB954" />
+                <Text style={styles.featureText}>Mood Detection</Text>
+              </View>
+            </View>
+          </MotiView>
         </View>
 
-        {/* Description */}
-        <View style={styles.description}>
-          <Text style={styles.descriptionText}>
-            Spotify dinleme geçmişinizde bulunan şarkılarla AI asistanları ile sohbet edin. Her
-            şarkının hikayesini, analizini ve duygusal etkilerini keşfedin.
-          </Text>
-        </View>
-
-        {/* Features */}
-        <View style={styles.features}>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>📚</Text>
-            <Text style={styles.featureText}>Şarkı hikayeleri</Text>
-          </View>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>🎵</Text>
-            <Text style={styles.featureText}>Müzik analizi</Text>
-          </View>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>✍️</Text>
-            <Text style={styles.featureText}>Şarkı sözü yorumu</Text>
-          </View>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>🧠</Text>
-            <Text style={styles.featureText}>Ruh hali analizi</Text>
-          </View>
-        </View>
-
-        {/* Login Button */}
-        <TouchableOpacity
-          style={[styles.loginButton, isAuthenticating && styles.loginButtonDisabled]}
+        {/* Spotify Login Button */}
+        <Pressable
           onPress={handleSpotifyLogin}
           disabled={isAuthenticating}
+          hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
+          style={styles.loginButton}
         >
-          {isAuthenticating ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Text style={styles.loginButtonText}>Spotify ile Giriş Yap</Text>
-              <Text style={styles.spotifyIcon}>♪</Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        {/* Info */}
-        <Text style={styles.info}>
-          Spotify Premium hesabınıza güvenli bir şekilde bağlanıyoruz. Verileriniz korunur ve hiçbir
-          bilgi saklanmaz.
-        </Text>
-      </View>
-    </View>
+          <View style={[styles.loginButtonContent, isAuthenticating && styles.loginButtonDisabled]}>
+            {isAuthenticating ? (
+              <>
+                <MaterialIcons name="hourglass-empty" size={28} color="#1DB954" />
+                <Text style={styles.loginButtonText}>Connecting...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="musical-notes" size={28} color="#1DB954" />
+                <Text style={styles.loginButtonText}>Continue with Spotify</Text>
+              </>
+            )}
+          </View>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -128,83 +189,141 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  content: {
+  loadingContainer: {
     flex: 1,
-    padding: 24,
     justifyContent: 'center',
-  },
-  header: {
     alignItems: 'center',
-    marginBottom: 40,
+    backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    fontFamily: 'LatoRegular',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  videoOverlay: {
+    opacity: 0.8,
   },
   logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#1DB954',
-    marginBottom: 8,
+    position: 'absolute',
+    top: Constants.statusBarHeight + 20,
+    left: _spacing,
+    zIndex: 10,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-  description: {
-    marginBottom: 40,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 24,
-    opacity: 0.7,
-  },
-  features: {
-    marginBottom: 60,
-  },
-  feature: {
+  logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: _spacing,
+    paddingVertical: _spacing * 0.75,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  featureIcon: {
+  logoText: {
+    marginLeft: _spacing * 0.5,
     fontSize: 20,
-    marginRight: 12,
+    fontFamily: 'LatoBold',
+    color: '#1DB954',
+  },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingBottom: height * 0.1,
+    paddingHorizontal: _spacing * 2,
+  },
+  brandSection: {
+    alignItems: 'center',
+    marginTop: height * 0.15,
+  },
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: _spacing * 2,
+  },
+  brandText: {
+    marginLeft: _spacing,
+    fontSize: 48,
+    fontFamily: 'LatoBold',
+    color: '#fff',
+  },
+  tagline: {
+    fontSize: 28,
+    fontFamily: 'LatoLight',
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 36,
+    marginBottom: _spacing * 3,
+  },
+  divider: {
+    height: 3,
+    width: width * 0.15,
+    backgroundColor: '#1DB954',
+    borderRadius: 2,
+  },
+  featuresSection: {
+    alignItems: 'center',
+    marginBottom: _spacing * 3,
+  },
+  featuresTitle: {
+    fontSize: 24,
+    fontFamily: 'LatoBold',
+    color: '#fff',
+    marginBottom: _spacing * 2,
+    textAlign: 'center',
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  featureItem: {
+    alignItems: 'center',
+    width: '48%',
+    marginBottom: _spacing * 2,
+    paddingVertical: _spacing,
+    paddingHorizontal: _spacing,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'LatoRegular',
     color: '#fff',
-    opacity: 0.8,
+    marginTop: _spacing * 0.5,
+    textAlign: 'center',
   },
   loginButton: {
-    backgroundColor: '#1DB954',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 25,
+    marginHorizontal: _spacing * 2,
+    marginBottom: _spacing * 2,
+  },
+  loginButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    paddingVertical: _spacing * 1.25,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   loginButtonDisabled: {
-    opacity: 0.7,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   loginButtonText: {
-    color: '#fff',
+    marginLeft: _spacing,
     fontSize: 18,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  spotifyIcon: {
-    fontSize: 20,
-    color: '#fff',
-  },
-  info: {
-    fontSize: 12,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.5,
-    lineHeight: 18,
+    fontFamily: 'LatoBold',
+    color: '#1DB954',
   },
 });

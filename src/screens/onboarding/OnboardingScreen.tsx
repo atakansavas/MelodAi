@@ -1,41 +1,16 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { agentRegistry } from '@agents/index';
-import { useAppStore } from '@store/app';
-
+import { useAppStore } from '../../../store';
 import { useRouter } from '../../hooks/useRouter';
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { setOnboardingCompleted } = useAppStore();
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-
-  const agents = agentRegistry.getAllAgents();
 
   const handleComplete = async () => {
-    if (selectedAgents.length === 0) {
-      Alert.alert(
-        'Asistan Seçimi',
-        'En az bir asistan seçmelisiniz. Varsayılan olarak tüm asistanlar seçilsin mi?',
-        [
-          { text: 'Geri Dön', style: 'cancel' },
-          {
-            text: 'Tümünü Seç',
-            onPress: () => {
-              setSelectedAgents(agents.map((agent) => agent.id));
-              completeOnboarding();
-            },
-          },
-        ]
-      );
-      return;
-    }
-
-    completeOnboarding();
-  };
-
-  const completeOnboarding = async () => {
     await setOnboardingCompleted(true);
     router.goToHome();
   };
@@ -47,89 +22,56 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Hoş Geldiniz! 🎉</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Melodia ile müziğinizin hikayelerini keşfetmeye hazır mısınız?
-          </Text>
-
-          <Text style={styles.welcomeText}>
-            Spotify dinleme geçmişinizdeki şarkılarla AI asistanlarımız ile sohbet edebileceksiniz.
-            Her şarkının kendine özgü bir hikayesi var ve biz bu hikayeleri sizinle paylaşacağız.
-          </Text>
-
-          <View style={styles.benefitsList}>
-            <Text style={styles.benefitItem}>🎵 Şarkılarınızın hikayelerini öğrenin</Text>
-            <Text style={styles.benefitItem}>🧠 Müziğin duygusal etkilerini keşfedin</Text>
-            <Text style={styles.benefitItem}>📚 Sanatçıların yaşadıklarını anlayın</Text>
-            <Text style={styles.benefitItem}>✍️ Şarkı sözlerinin derinliklerini görün</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Ionicons name="musical-notes" size={48} color="#1DB954" />
+            <Text style={styles.logoText}>MelodAi</Text>
           </View>
         </View>
 
-        {/* Agent Selection Section */}
-        <View style={styles.agentsSection}>
-          <Text style={styles.agentsTitle}>AI Asistanlarımızla Tanışın 🤖</Text>
-          <Text style={styles.agentsSubtitle}>Hangi asistanlarla sohbet etmek istiyorsunuz?</Text>
+        {/* Welcome */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Welcome! 🎉</Text>
+          <Text style={styles.welcomeSubtitle}>Chat with AI about your Spotify music</Text>
+        </View>
 
-          <View style={styles.agentsContainer}>
-            {agents.map((agent) => (
-              <TouchableOpacity
-                key={agent.id}
-                style={[
-                  styles.agentCard,
-                  selectedAgents.includes(agent.id) && styles.agentCardSelected,
-                ]}
-                onPress={() => {
-                  if (selectedAgents.includes(agent.id)) {
-                    setSelectedAgents(selectedAgents.filter((id) => id !== agent.id));
-                  } else {
-                    setSelectedAgents([...selectedAgents, agent.id]);
-                  }
-                }}
-              >
-                <Text style={styles.agentAvatar}>{agent.avatar}</Text>
-                <View style={styles.agentInfo}>
-                  <Text style={styles.agentName}>{agent.name}</Text>
-                  <Text style={styles.agentDescription}>{agent.description}</Text>
-                  <View style={styles.agentSpecialties}>
-                    {agent.specialties.slice(0, 2).map((specialty, index) => (
-                      <Text key={index} style={styles.agentSpecialty}>
-                        {specialty}
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+        {/* Features */}
+        <View style={styles.featuresSection}>
+          <View style={styles.featureItem}>
+            <View style={styles.featureIconContainer}>
+              <Ionicons name="book-outline" size={24} color="#1DB954" />
+            </View>
+            <Text style={styles.featureText}>Song Stories</Text>
           </View>
 
-          {/* Selected Agents Preview */}
-          <View style={styles.selectedAgentsPreview}>
-            <Text style={styles.selectedAgentsTitle}>Seçtiğiniz asistanlar:</Text>
-            {selectedAgents.length === 0 ? (
-              <Text style={styles.noAgentsText}>Henüz bir asistan seçmediniz</Text>
-            ) : (
-              <View style={styles.selectedAgentsList}>
-                {selectedAgents.map((agentId) => {
-                  const agent = agentRegistry.getAgent(agentId);
-                  return agent ? (
-                    <View key={agentId} style={styles.selectedAgentItem}>
-                      <Text style={styles.selectedAgentAvatar}>{agent.avatar}</Text>
-                      <Text style={styles.selectedAgentName}>{agent.name}</Text>
-                    </View>
-                  ) : null;
-                })}
-              </View>
-            )}
+          <View style={styles.featureItem}>
+            <View style={styles.featureIconContainer}>
+              <Ionicons name="analytics-outline" size={24} color="#1DB954" />
+            </View>
+            <Text style={styles.featureText}>Music Analysis</Text>
+          </View>
+
+          <View style={styles.featureItem}>
+            <View style={styles.featureIconContainer}>
+              <Ionicons name="create-outline" size={24} color="#1DB954" />
+            </View>
+            <Text style={styles.featureText}>Lyric Insights</Text>
+          </View>
+
+          <View style={styles.featureItem}>
+            <View style={styles.featureIconContainer}>
+              <Ionicons name="heart-outline" size={24} color="#1DB954" />
+            </View>
+            <Text style={styles.featureText}>Mood Detection</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Action */}
+      {/* Start Button */}
       <View style={styles.bottomAction}>
         <TouchableOpacity style={styles.startButton} onPress={handleComplete}>
-          <Text style={styles.startButtonText}>Başlayalım! 🚀</Text>
+          <Text style={styles.startButtonText}>Start Exploring 🚀</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -145,151 +87,87 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for bottom action
+    paddingBottom: 140,
   },
-  welcomeSection: {
+  header: {
+    paddingTop: Constants.statusBarHeight + 40,
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 32,
+    alignItems: 'center',
   },
-  welcomeTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  welcomeSubtitle: {
-    fontSize: 18,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.9,
-    marginBottom: 24,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-    opacity: 0.8,
-  },
-  benefitsList: {
-    paddingHorizontal: 16,
-  },
-  benefitItem: {
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 12,
-    opacity: 0.9,
-  },
-  agentsSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  agentsTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  agentsSubtitle: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.8,
-    marginBottom: 32,
-  },
-  agentsContainer: {
-    marginBottom: 32,
-  },
-  agentCard: {
-    flexDirection: 'row',
-    backgroundColor: '#111',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  agentCardSelected: {
-    borderColor: '#1DB954',
-    backgroundColor: '#1DB954',
-  },
-  agentAvatar: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  agentInfo: {
-    flex: 1,
-  },
-  agentName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  agentDescription: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.7,
-    marginBottom: 8,
-  },
-  agentSpecialties: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  agentSpecialty: {
-    fontSize: 12,
-    color: '#fff',
-    backgroundColor: '#333',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 4,
-    opacity: 0.8,
-  },
-  selectedAgentsPreview: {
-    backgroundColor: '#111',
-    padding: 16,
-    borderRadius: 12,
-  },
-  selectedAgentsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
-  },
-  noAgentsText: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.6,
-    textAlign: 'center',
-  },
-  selectedAgentsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  selectedAgentItem: {
+  logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1DB954',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  selectedAgentAvatar: {
-    fontSize: 16,
-    marginRight: 6,
+  logoText: {
+    marginLeft: 16,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1DB954',
+    letterSpacing: -0.5,
   },
-  selectedAgentName: {
-    fontSize: 14,
+  welcomeSection: {
+    paddingHorizontal: 32,
+    paddingBottom: 48,
+    alignItems: 'center',
+  },
+  welcomeTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 16,
+    letterSpacing: -1,
+  },
+  welcomeSubtitle: {
+    fontSize: 20,
+    color: '#fff',
+    textAlign: 'center',
+    opacity: 0.85,
+    fontWeight: '400',
+    lineHeight: 28,
+  },
+  featuresSection: {
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(29, 185, 84, 0.25)',
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  featureIconContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(29, 185, 84, 0.15)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 20,
+  },
+  featureText: {
+    fontSize: 18,
     color: '#fff',
     fontWeight: '600',
+    letterSpacing: -0.3,
   },
   bottomAction: {
     position: 'absolute',
@@ -297,20 +175,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 24,
-    paddingVertical: 32,
-    backgroundColor: '#000',
+    paddingTop: 24,
+    paddingBottom: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
   },
   startButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 20,
+    borderRadius: 16,
     backgroundColor: '#1DB954',
     alignItems: 'center',
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
 });
