@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { useAuthStore } from '@/store';
 import { SpotifyApiService } from '@services/spotify';
 
 import { SpotifyPlayHistory, SpotifyTrack } from '../../../types/spotify';
@@ -18,6 +19,8 @@ import { useRouter } from '../../hooks/useRouter';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  console.log('🚀 ~ HomeScreen ~ user:', user);
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,7 +97,7 @@ export default function HomeScreen() {
 
   return (
     <MainLayout
-      title="Merhaba! 👋"
+      title={`Selam ${user?.display_name}! 👋`}
       subtitle="Hangi şarkı hakkında konuşmak istersiniz?"
       showChatInput={true}
       onChatSubmit={handleChatSubmit}

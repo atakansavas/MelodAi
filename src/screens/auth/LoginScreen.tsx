@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { MotiView, useDynamicAnimation } from 'moti';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -88,8 +88,9 @@ const MelodAiLogo = () => {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setLoading, setUser } = useAuthStore();
+  const { setLoading, setUser, setAuthData, refreshAuthState } = useAuthStore();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const authService = SpotifyAuthService.getInstance();
   const apiService = SpotifyApiService.getInstance();
 
@@ -104,80 +105,164 @@ export default function LoginScreen() {
     translateY: 40,
   }));
 
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      try {
+        const authState = await authService.getAuthState();
+        if (authState.isAuthenticated && authState.user) {
+          // User is already logged in, navigate to home
+          router.goToHome();
+        }
+      } catch (error) {
+        console.error('Error checking existing auth:', error);
+      }
+    };
+
+    checkExistingAuth();
+  }, []);
+
+  const handleAuthError = useCallback(
+    (errorMessage: string, error?: any) => {
+      console.error('Auth error:', error);
+      setError(errorMessage);
+      setIsAuthenticating(false);
+      setLoading(false);
+
+      Alert.alert('Authentication Error', errorMessage, [
+        {
+          text: 'Try Again',
+          onPress: () => setError(null),
+        },
+      ]);
+    },
+    [setLoading]
+  );
+
   const handleSpotifyLogin = useCallback(async () => {
+    if (isAuthenticating) return;
+
     setIsAuthenticating(true);
     setLoading(true);
+    setError(null);
 
     try {
+      // Step 1: Get authorization request
       const request = authService.getAuthRequest();
+
+      // Step 2: Prompt for authorization
       const result = await request.promptAsync({
         authorizationEndpoint: 'https://accounts.spotify.com/authorize',
       });
 
-      if (result.type === 'success') {
-        const tokenResponse = await authService.handleAuthResponse(result, request);
-
-        if (tokenResponse) {
-          // Get user information
-          try {
-            const user = await apiService.getCurrentUser();
-
-            // Get push notification token
-            const pushToken = await getPushNotificationToken();
-
-            const req = {
-              deviceInfo: {
-                platform: Platform.OS,
-                deviceName: Device.deviceName,
-                deviceId: Device.brand,
-                osVersion: Device.osVersion,
-                appVersion: Constants.expoConfig?.version,
-                pushToken: pushToken || '',
-                notificationsEnabled: pushToken !== null,
-              },
-              spotifyProfile: {
-                id: user.id,
-                followers: user.followers.total,
-                images: user.images,
-                display_name: user.display_name,
-                email: user.email,
-                country: user.country,
-                product: user.product,
-                external_urls: user.external_urls,
-              },
-              preferences: {
-                preferred_genres: [],
-                language_preference: 'en',
-                timezone: 'UTC',
-                listening_habits: '',
-                interaction_patterns: '',
-                privacy_settings: '',
-              },
-            } as UserRegistrationData;
-
-            console.log('🚀 ~ handleSpotifyLogin ~ req:', JSON.stringify(req, null, 2));
-
-            const res = await MelodAiService.getInstance().userRegister(req);
-            setUser(user);
-          } catch (userError) {
-            console.error('Failed to get user data:', userError);
-          }
-
-          router.goToOnboarding();
-        } else {
-          Alert.alert('Error', 'An error occurred during login.');
-        }
-      } else {
-        Alert.alert('Cancelled', 'Login process was cancelled.');
+      if (result.type === 'cancel') {
+        setIsAuthenticating(false);
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'An error occurred during login.');
+
+      if (result.type !== 'success') {
+        throw new Error('Authorization failed');
+      }
+
+      // Step 3: Handle auth response and get tokens
+      const tokenResponse = await authService.handleAuthResponse(result, request);
+      if (!tokenResponse) {
+        throw new Error('Failed to obtain access tokens');
+      }
+
+      // Step 4: Get user information from Spotify
+      const user = await apiService.getCurrentUser();
+      if (!user) {
+        throw new Error('Failed to get user information');
+      }
+
+      // Step 5: Save user to store and storage
+      setUser(user);
+
+      // Step 6: Get push notification token
+      const pushToken = await getPushNotificationToken();
+
+      // Step 7: Register with MelodAI service
+      const registrationData: UserRegistrationData = {
+        deviceInfo: {
+          platform: Platform.OS,
+          deviceName: Device.deviceName || 'Unknown Device',
+          deviceId: Device.brand || 'Unknown Brand',
+          osVersion: Device.osVersion || 'Unknown',
+          appVersion: Constants.expoConfig?.version || '1.0.0',
+          pushToken: pushToken || '',
+          notificationsEnabled: pushToken !== null,
+        },
+        spotifyProfile: {
+          id: user.id,
+          followers: user.followers.total,
+          images: user.images,
+          display_name: user.display_name,
+          email: user.email,
+          country: user.country,
+          product: user.product,
+          external_urls: user.external_urls,
+        },
+        preferences: {
+          preferred_genres: [],
+          language_preference: 'en',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          listening_habits: '',
+          interaction_patterns: '',
+          privacy_settings: '',
+        },
+      };
+
+      console.log('Registering with MelodAI:', JSON.stringify(registrationData, null, 2));
+
+      try {
+        const melodAiResponse = await MelodAiService.getInstance().userRegister(registrationData);
+
+        // Step 8: Save MelodAI response data
+        if (melodAiResponse) {
+          await setAuthData(melodAiResponse);
+        }
+      } catch (melodAiError) {
+        console.warn(
+          'MelodAI registration failed, but continuing with Spotify auth:',
+          melodAiError
+        );
+        // Continue even if MelodAI registration fails
+      }
+
+      // Step 9: Refresh auth state and navigate
+      await refreshAuthState();
+
+      // Show success message and navigate
+      Alert.alert(
+        '🎉 Login Successful!',
+        'You have successfully logged in with your Spotify account.',
+        [
+          {
+            text: 'Continue',
+            onPress: () => router.goToOnboarding(),
+          },
+        ]
+      );
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An unexpected error occurred during login';
+      handleAuthError(errorMessage, error);
     } finally {
       setIsAuthenticating(false);
       setLoading(false);
     }
-  }, [authService, apiService, setLoading, setUser, router]);
+  }, [
+    isAuthenticating,
+    authService,
+    apiService,
+    setLoading,
+    setUser,
+    setAuthData,
+    refreshAuthState,
+    router,
+    handleAuthError,
+  ]);
 
   if (!fontsLoaded) {
     return (
@@ -242,6 +327,13 @@ export default function LoginScreen() {
               </View>
             </View>
           </MotiView>
+
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
         </View>
 
         {/* Spotify Login Button */}
@@ -384,6 +476,20 @@ const styles = StyleSheet.create({
     fontFamily: 'LatoRegular',
     color: '#fff',
     marginTop: _spacing * 0.5,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    paddingHorizontal: _spacing,
+    paddingVertical: _spacing * 0.75,
+    borderRadius: 8,
+    marginHorizontal: _spacing,
+    marginBottom: _spacing,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'LatoRegular',
     textAlign: 'center',
   },
   loginButton: {

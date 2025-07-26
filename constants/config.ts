@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'spotify_refresh_token',
   TOKEN_EXPIRY: 'spotify_token_expiry',
   USER_DATA: 'spotify_user_data',
+  AUTH_DATA: 'melodai_auth_data',
   ONBOARDING_COMPLETED: 'onboarding_completed',
   SELECTED_AGENT: 'selected_agent_id',
 };
