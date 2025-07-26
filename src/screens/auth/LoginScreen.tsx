@@ -2,6 +2,8 @@ import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-go
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { MotiView, useDynamicAnimation } from 'moti';
 import { useCallback, useState } from 'react';
 import {
@@ -17,6 +19,9 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { MelodAiService } from '@/services/ai';
+import { UserRegistrationData } from '@/services/ai/MelodAiService';
+
 import { SpotifyApiService, SpotifyAuthService } from '../../../services/spotify';
 import { useAuthStore } from '../../../store';
 import { useRouter } from '../../hooks/useRouter';
@@ -25,6 +30,50 @@ const { width, height } = Dimensions.get('screen');
 
 const _logoSize = Math.max(width * 0.12, 56);
 const _spacing = 16;
+
+// Configure notification handling
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+// Function to get push notification token
+async function getPushNotificationToken(): Promise<string | null> {
+  try {
+    if (!Device.isDevice) {
+      console.log('Must use physical device for Push Notifications');
+      return null;
+    }
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.log('Failed to get push token for push notification!');
+      return null;
+    }
+
+    const token = await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas?.projectId,
+    });
+
+    console.log('Push token:', token.data);
+    return token.data;
+  } catch (error) {
+    console.error('Error getting push token:', error);
+    return null;
+  }
+}
 
 const MelodAiLogo = () => {
   return (
@@ -72,6 +121,43 @@ export default function LoginScreen() {
           // Get user information
           try {
             const user = await apiService.getCurrentUser();
+
+            // Get push notification token
+            const pushToken = await getPushNotificationToken();
+
+            const req = {
+              deviceInfo: {
+                platform: Platform.OS,
+                deviceName: Device.deviceName,
+                deviceId: Device.brand,
+                osVersion: Device.osVersion,
+                appVersion: Constants.expoConfig?.version,
+                pushToken: pushToken || '',
+                notificationsEnabled: pushToken !== null,
+              },
+              spotifyProfile: {
+                id: user.id,
+                followers: user.followers.total,
+                images: user.images,
+                display_name: user.display_name,
+                email: user.email,
+                country: user.country,
+                product: user.product,
+                external_urls: user.external_urls,
+              },
+              preferences: {
+                preferred_genres: [],
+                language_preference: 'en',
+                timezone: 'UTC',
+                listening_habits: '',
+                interaction_patterns: '',
+                privacy_settings: '',
+              },
+            } as UserRegistrationData;
+
+            console.log('🚀 ~ handleSpotifyLogin ~ req:', JSON.stringify(req, null, 2));
+
+            const res = await MelodAiService.getInstance().userRegister(req);
             setUser(user);
           } catch (userError) {
             console.error('Failed to get user data:', userError);

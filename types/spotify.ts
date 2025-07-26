@@ -5,6 +5,15 @@ export interface SpotifyUser {
   images: SpotifyImage[];
   product: 'free' | 'premium';
   country: string;
+  external_urls: {
+    spotify: string;
+  };
+  followers: {
+    href: string;
+    total: number;
+  };
+  href: string;
+  uri: string;
 }
 
 export interface SpotifyImage {

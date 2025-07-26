@@ -28,6 +28,7 @@ export class SpotifyApiService {
     options: RequestInit = {}
   ): Promise<any> {
     const accessToken = await this.authService.getAccessToken();
+    console.log('🚀 ~ SpotifyApiService ~ accessToken:', accessToken);
 
     if (!accessToken) {
       throw new Error('No access token available');

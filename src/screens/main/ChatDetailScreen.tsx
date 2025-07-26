@@ -14,9 +14,7 @@ import {
 } from 'react-native';
 
 import { SpotifyApiService } from '@services/spotify';
-import { SpotifyAuthService } from '@services/spotify/auth';
 
-import { API_CONFIG } from '../../../constants/config';
 import { SpotifyTrack } from '../../../types/spotify';
 import { useRouter } from '../../hooks/useRouter';
 
@@ -57,74 +55,6 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   // Check if there are any user messages
   const hasUserMessages = messages.some((message) => message.isUser);
 
-  // Helper method for making service calls with Spotify token
-  const makeServiceCall = async (
-    endpoint: string,
-    options: {
-      method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-      body?: any;
-      headers?: Record<string, string>;
-    } = {}
-  ) => {
-    try {
-      const authService = SpotifyAuthService.getInstance();
-      const accessToken = await authService.getAccessToken();
-
-      if (!accessToken) {
-        throw new Error('No valid Spotify access token available');
-      }
-
-      if (!API_CONFIG.SERVICE_URL) {
-        throw new Error('SERVICE_URL not configured');
-      }
-
-      const url = `${API_CONFIG.SERVICE_URL}${endpoint}`;
-      const { method = 'GET', body, headers = {} } = options;
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-          ...headers,
-        },
-        ...(body && { body: JSON.stringify(body) }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Service call failed: ${response.status} ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Service call error:', error);
-      throw error;
-    }
-  };
-
-  // Start chat method
-  const startChat = async (trackId?: string, message?: string) => {
-    try {
-      const chatData = {
-        trackId: trackId || params?.trackId,
-        trackName: params?.trackName,
-        artistName: params?.artistName,
-        initialMessage: message,
-        timestamp: new Date().toISOString(),
-      };
-
-      const response = await makeServiceCall('/chat/start', {
-        method: 'POST',
-        body: chatData,
-      });
-
-      return response;
-    } catch (error) {
-      console.error('Error starting chat:', error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
     setTimeout(() => {
@@ -155,6 +85,24 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     setMessages((prev) => [...prev, loadingMessage]);
 
     try {
+      // TODO: Replace mock response with actual AI service call
+      // const melodAiService = MelodAiService.getInstance();
+      // const response = await melodAiService.sendMessage(
+      //   actionText,
+      //   undefined, // chatId
+      //   {
+      //     trackId: params?.trackId,
+      //     trackName: params?.trackName,
+      //     artistName: params?.artistName,
+      //   }
+      // );
+      // const aiMessage: Message = {
+      //   id: (Date.now() + 2).toString(),
+      //   text: response.message || response.text,
+      //   isUser: false,
+      //   timestamp: new Date(),
+      // };
+
       // Simulate AI response (replace with actual API call)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -218,6 +166,24 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     setMessages((prev) => [...prev, loadingMessage]);
 
     try {
+      // TODO: Replace mock response with actual AI service call
+      // const melodAiService = MelodAiService.getInstance();
+      // const response = await melodAiService.sendMessage(
+      //   inputText.trim(),
+      //   undefined, // chatId
+      //   {
+      //     trackId: params?.trackId,
+      //     trackName: params?.trackName,
+      //     artistName: params?.artistName,
+      //   }
+      // );
+      // const aiMessage: Message = {
+      //   id: (Date.now() + 2).toString(),
+      //   text: response.message || response.text,
+      //   isUser: false,
+      //   timestamp: new Date(),
+      // };
+
       // Simulate AI response (replace with actual API call)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 

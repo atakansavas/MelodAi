@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
@@ -26,33 +27,44 @@ function SettingItem({
   switchValue = false,
   onSwitchChange,
   showArrow = true,
-}: SettingItemProps) {
+  delay = 0,
+}: SettingItemProps & { delay?: number }) {
   return (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress} disabled={showSwitch}>
-      <View style={styles.settingItemLeft}>
-        <View style={styles.settingIcon}>
-          <Feather name={icon as any} size={20} color="#fff" />
+    <MotiView
+      from={{ opacity: 0, translateX: -20 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      transition={{
+        type: 'timing',
+        duration: 400,
+        delay,
+      }}
+    >
+      <TouchableOpacity style={styles.settingItem} onPress={onPress} disabled={showSwitch}>
+        <View style={styles.settingItemLeft}>
+          <View style={styles.settingIcon}>
+            <Feather name={icon as any} size={20} color="#fff" />
+          </View>
+          <View style={styles.settingText}>
+            <Text style={styles.settingTitle}>{title}</Text>
+            {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+          </View>
         </View>
-        <View style={styles.settingText}>
-          <Text style={styles.settingTitle}>{title}</Text>
-          {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        <View style={styles.settingItemRight}>
+          {showSwitch ? (
+            <Switch
+              value={switchValue}
+              onValueChange={onSwitchChange}
+              trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#1DB954' }}
+              thumbColor="#fff"
+            />
+          ) : (
+            showArrow && (
+              <Feather name="chevron-right" size={20} color="#fff" style={{ opacity: 0.5 }} />
+            )
+          )}
         </View>
-      </View>
-      <View style={styles.settingItemRight}>
-        {showSwitch ? (
-          <Switch
-            value={switchValue}
-            onValueChange={onSwitchChange}
-            trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#1DB954' }}
-            thumbColor="#fff"
-          />
-        ) : (
-          showArrow && (
-            <Feather name="chevron-right" size={20} color="#fff" style={{ opacity: 0.5 }} />
-          )
-        )}
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </MotiView>
   );
 }
 
@@ -90,57 +102,99 @@ export default function SettingsScreen() {
 
   return (
     <MainLayout title="Ayarlar" subtitle="Uygulama tercihlerinizi yönetin">
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Profile Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hesap</Text>
-          <View style={styles.sectionContent}>
-            <SettingItem
-              icon="user"
-              title="Profil"
-              subtitle={user?.display_name || 'Kullanıcı'}
-              onPress={handleProfilePress}
-            />
-            <SettingItem
-              icon="shield"
-              title="Gizlilik"
-              subtitle="Veri kullanımı ve gizlilik ayarları"
-              onPress={handlePrivacyPress}
-            />
-          </View>
-        </View>
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{
+          type: 'timing',
+          duration: 600,
+        }}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+          {/* Profile Section */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 500,
+              delay: 200,
+            }}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>Hesap</Text>
+            <View style={styles.sectionContent}>
+              <SettingItem
+                icon="user"
+                title="Profil"
+                subtitle={user?.display_name || 'Kullanıcı'}
+                onPress={handleProfilePress}
+                delay={300}
+              />
+              <SettingItem
+                icon="shield"
+                title="Gizlilik"
+                subtitle="Veri kullanımı ve gizlilik ayarları"
+                onPress={handlePrivacyPress}
+                delay={400}
+              />
+            </View>
+          </MotiView>
 
-        {/* Support Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Destek</Text>
-          <View style={styles.sectionContent}>
-            <SettingItem
-              icon="help-circle"
-              title="Yardım"
-              subtitle="Sık sorulan sorular ve destek"
-              onPress={handleHelpPress}
-            />
-            <SettingItem
-              icon="info"
-              title="Hakkında"
-              subtitle="Uygulama bilgileri"
-              onPress={handleAboutPress}
-            />
-            <SettingItem
-              icon="file-text"
-              title="Kullanım Şartları"
-              subtitle="Yasal bilgiler"
-              onPress={handleTermsPress}
-            />
-          </View>
-        </View>
+          {/* Support Section */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 500,
+              delay: 400,
+            }}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>Destek</Text>
+            <View style={styles.sectionContent}>
+              <SettingItem
+                icon="help-circle"
+                title="Yardım"
+                subtitle="Sık sorulan sorular ve destek"
+                onPress={handleHelpPress}
+                delay={500}
+              />
+              <SettingItem
+                icon="info"
+                title="Hakkında"
+                subtitle="Uygulama bilgileri"
+                onPress={handleAboutPress}
+                delay={600}
+              />
+              <SettingItem
+                icon="file-text"
+                title="Kullanım Şartları"
+                subtitle="Yasal bilgiler"
+                onPress={handleTermsPress}
+                delay={700}
+              />
+            </View>
+          </MotiView>
 
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>Spoti v1.0.0</Text>
-          <Text style={styles.appInfoSubtext}>Müzik deneyiminizi AI ile zenginleştirin</Text>
-        </View>
-      </ScrollView>
+          {/* App Info */}
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: 'timing',
+              duration: 400,
+              delay: 800,
+            }}
+            style={styles.appInfo}
+          >
+            <Text style={styles.appInfoText}>Spoti v1.0.0</Text>
+            <Text style={styles.appInfoSubtext}>Müzik deneyiminizi AI ile zenginleştirin</Text>
+          </MotiView>
+        </ScrollView>
+      </MotiView>
     </MainLayout>
   );
 }
