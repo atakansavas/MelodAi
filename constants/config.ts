@@ -2,6 +2,7 @@ import { SPOTIFY_SCOPES } from '../types/spotify';
 
 export const SPOTIFY_CONFIG = {
   CLIENT_ID: process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID || '',
+  CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET || '',
   REDIRECT_URI: 'spoti://auth/callback',
   SCOPES: SPOTIFY_SCOPES.join(' '),
   DISCOVERY: {

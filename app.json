@@ -1,16 +1,19 @@
 {
   "expo": {
-    "name": "Spoti",
-    "slug": "benatakanspoti",
-    "version": "1.0.0",
+    "name": "SongSpot",
+    "slug": "songspot",
+    "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "benatakanspoti",
+    "scheme": "songspot",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.benatakanspoti.app"
+      "bundleIdentifier": "com.benatakanspoti.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,8 +25,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "output": "single"
     },
     "plugins": [
       "expo-secure-store",
@@ -36,7 +38,28 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-5000588823133132~9179118840",
+          "iosAppId": "ca-app-pub-5000588823133132~4410508909"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9410c2e8-3900-4bb4-b205-6cadcda97684"
+      }
+    },
+    "owner": "benatakan"
   }
 }

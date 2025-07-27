@@ -224,7 +224,7 @@ export class SpotifyAuthService {
         throw new AuthError('No refresh token available', 'REFRESH_TOKEN_MISSING');
       }
 
-      if (!process.env.SPOTIFY_CLIENT_SECRET) {
+      if (!SPOTIFY_CONFIG.CLIENT_SECRET) {
         throw new AuthError('Spotify Client Secret is not configured', 'CONFIG_ERROR');
       }
 
@@ -233,7 +233,7 @@ export class SpotifyAuthService {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${SPOTIFY_CONFIG.CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+            `${SPOTIFY_CONFIG.CLIENT_ID}:${SPOTIFY_CONFIG.CLIENT_SECRET}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({

@@ -208,9 +208,9 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     }
   };
 
-  const handleComingSoonAction = () => {
+  const handleShareAction = () => {
     setIsModalVisible(false);
-    Alert.alert('🚧 Yakında', 'Bu özellik yakında gelecek!');
+    Alert.alert('📤 Paylaş', 'Paylaşım özelliği yakında gelecek!');
   };
 
   const renderMessage = (message: ChatMessage) => (
@@ -422,12 +422,12 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
 
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={handleComingSoonAction}
+              onPress={handleShareAction}
               accessible={true}
-              accessibilityLabel="Yakında gelecek özellik"
+              accessibilityLabel="Paylaş"
             >
-              <Feather name="clock" size={20} color="#fff" />
-              <Text style={styles.modalButtonText}>Yakında</Text>
+              <Feather name="share-2" size={20} color="#fff" />
+              <Text style={styles.modalButtonText}>Paylaş</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
