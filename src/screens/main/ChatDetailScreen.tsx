@@ -13,47 +13,60 @@ import {
   View,
 } from 'react-native';
 
+import { MelodAiService } from '@services/ai';
 import { SpotifyApiService } from '@services/spotify';
 
-import { SpotifyTrack } from '../../../types/spotify';
+import {
+  ChatMessage,
+  createAssistantMessage,
+  createLoadingMessage,
+  createUserMessage,
+} from '../../../types/chat';
 import { useRouter } from '../../hooks/useRouter';
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  isLoading?: boolean;
-}
 
 interface ChatDetailScreenProps {
   params?: {
+    sessionId?: string;
     trackId?: string;
     trackName?: string;
     artistName?: string;
+    initialMessage?: string;
   };
 }
 
 export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Merhaba! Müzik hakkında herhangi bir konuda sohbet edebiliriz. Hangi konuda yardımcı olabilirim?',
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessionId, setSessionId] = useState<string>('');
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const trackName = params?.trackName || 'Müzik';
+  console.log('🚀 ~ ChatDetailScreen ~ params:', params);
   const artistName = params?.artistName || '';
+  const melodAiService = MelodAiService.getInstance();
 
   // Check if there are any user messages
-  const hasUserMessages = messages.some((message) => message.isUser);
+  const hasUserMessages = messages.some((message) => message.role === 'user');
+
+  useEffect(() => {
+    // Initialize session
+    initializeSession();
+  }, []);
+
+  useEffect(() => {
+    // Handle initial message if provided
+    if (params?.initialMessage && messages.length === 1 && !hasUserMessages) {
+      // Auto-send the initial message after session is initialized
+      setTimeout(() => {
+        handleSendMessage(params.initialMessage!);
+      }, 500);
+    }
+  }, [params?.initialMessage, messages.length, hasUserMessages]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -62,163 +75,104 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     }, 100);
   }, [messages]);
 
-  const handleQuickAction = async (actionText: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: actionText,
-      isUser: true,
-      timestamp: new Date(),
-    };
+  const initializeSession = () => {
+    const initialSessionId = params?.sessionId || '';
+    setSessionId(initialSessionId);
 
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+    // Add welcome message
+    const welcomeMessage = createAssistantMessage(
+      'Merhaba! Müzik hakkında herhangi bir konuda sohbet edebiliriz. Hangi konuda yardımcı olabilirim?',
+      initialSessionId,
+      params?.trackId
+    );
+    setMessages([welcomeMessage]);
+  };
 
-    // Add loading message
-    const loadingMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: 'AI düşünüyor...',
-      isUser: false,
-      timestamp: new Date(),
-      isLoading: true,
-    };
+  const buildContext = () => ({
+    trackId: params?.trackId,
+    selectedTrackName: params?.trackName,
+    selectedArtistName: params?.artistName,
+    timestamp: new Date().toISOString(),
+  });
 
-    setMessages((prev) => [...prev, loadingMessage]);
+  const handleSendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
     try {
-      // TODO: Replace mock response with actual AI service call
-      // const melodAiService = MelodAiService.getInstance();
-      // const response = await melodAiService.sendMessage(
-      //   actionText,
-      //   undefined, // chatId
-      //   {
-      //     trackId: params?.trackId,
-      //     trackName: params?.trackName,
-      //     artistName: params?.artistName,
-      //   }
-      // );
-      // const aiMessage: Message = {
-      //   id: (Date.now() + 2).toString(),
-      //   text: response.message || response.text,
-      //   isUser: false,
-      //   timestamp: new Date(),
-      // };
+      setIsLoading(true);
+      setError(null);
 
-      // Simulate AI response (replace with actual API call)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Create user message
+      const userMessage = createUserMessage(messageText.trim(), sessionId, params?.trackId);
+      setMessages((prev) => [...prev, userMessage]);
 
-      const aiResponses = [
-        'Bu şarkı gerçekten harika! Müzik teorisi açısından bakarsak, bu parça çok güzel bir melodi yapısına sahip.',
-        'Bu sanatçının diğer eserlerini de dinlemenizi öneririm. Benzer tarzda başka önerilerim de var.',
-        'Müzik tarihinde bu tür eserlerin önemli bir yeri var. Hangi dönem hakkında daha fazla bilgi almak istersiniz?',
-        'Bu şarkının sözleri gerçekten derin anlamlar taşıyor. Sanatçının hayatından izler bulabilirsiniz.',
-        'Müzik prodüksiyonu açısından bu parça çok başarılı. Hangi teknik detaylar hakkında konuşmak istersiniz?',
-        'Bu tür müzik dinlemek ruh halinizi nasıl etkiliyor? Müziğin psikolojik etkileri hakkında konuşabiliriz.',
-        'Bu sanatçının kariyer yolculuğu gerçekten ilham verici. Başka hangi sanatçıları takip ediyorsunuz?',
-        'Müzik türleri arasında geçiş yapmak her zaman ilginç. Hangi türleri keşfetmek istiyorsunuz?',
-      ];
+      // Add loading message
+      const loadingMessage = createLoadingMessage(sessionId);
+      setMessages((prev) => [...prev, loadingMessage]);
 
-      const randomResponse =
-        aiResponses[Math.floor(Math.random() * aiResponses.length)] ||
-        'Merhaba! Size nasıl yardımcı olabilirim?';
+      // Send message to AI service
+      console.log('🚀 ~ handleSendMessage ~ messageText:', messageText);
+      console.log('🚀 ~ handleSendMessage ~ sessionId:', sessionId);
+      const response = await melodAiService.sendMessage(
+        messageText.trim(),
+        sessionId,
+        buildContext()
+      );
 
-      const aiMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        text: randomResponse,
-        isUser: false,
-        timestamp: new Date(),
-      };
+      // Update sessionId if it's a new session
+      if (response.data.isNewSession && response.data.sessionId !== sessionId) {
+        setSessionId(response.data.sessionId);
+      }
 
+      // Create AI response message
+      const aiMessage = createAssistantMessage(
+        response.data.response,
+        response.data.sessionId,
+        params?.trackId
+      );
+
+      // Replace loading message with AI response
       setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
+
+      setRetryCount(0); // Reset retry count on success
     } catch (error) {
-      console.error('Error getting AI response:', error);
-      Alert.alert('Hata', 'AI yanıtı alınırken bir hata oluştu. Lütfen tekrar deneyin.');
+      console.error('Error sending message:', error);
+      setError(error instanceof Error ? error.message : 'Failed to send message');
 
       // Remove loading message
       setMessages((prev) => prev.filter((msg) => !msg.isLoading));
+
+      // Show error alert with retry option
+      Alert.alert('Hata', 'Mesaj gönderilirken bir hata oluştu. Tekrar denemek ister misiniz?', [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Tekrar Dene',
+          onPress: () => handleRetry(messageText),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
-      isUser: true,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputText('');
-    setIsLoading(true);
-
-    // Add loading message
-    const loadingMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: 'AI düşünüyor...',
-      isUser: false,
-      timestamp: new Date(),
-      isLoading: true,
-    };
-
-    setMessages((prev) => [...prev, loadingMessage]);
-
-    try {
-      // TODO: Replace mock response with actual AI service call
-      // const melodAiService = MelodAiService.getInstance();
-      // const response = await melodAiService.sendMessage(
-      //   inputText.trim(),
-      //   undefined, // chatId
-      //   {
-      //     trackId: params?.trackId,
-      //     trackName: params?.trackName,
-      //     artistName: params?.artistName,
-      //   }
-      // );
-      // const aiMessage: Message = {
-      //   id: (Date.now() + 2).toString(),
-      //   text: response.message || response.text,
-      //   isUser: false,
-      //   timestamp: new Date(),
-      // };
-
-      // Simulate AI response (replace with actual API call)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const aiResponses = [
-        'Bu şarkı gerçekten harika! Müzik teorisi açısından bakarsak, bu parça çok güzel bir melodi yapısına sahip.',
-        'Bu sanatçının diğer eserlerini de dinlemenizi öneririm. Benzer tarzda başka önerilerim de var.',
-        'Müzik tarihinde bu tür eserlerin önemli bir yeri var. Hangi dönem hakkında daha fazla bilgi almak istersiniz?',
-        'Bu şarkının sözleri gerçekten derin anlamlar taşıyor. Sanatçının hayatından izler bulabilirsiniz.',
-        'Müzik prodüksiyonu açısından bu parça çok başarılı. Hangi teknik detaylar hakkında konuşmak istersiniz?',
-        'Bu tür müzik dinlemek ruh halinizi nasıl etkiliyor? Müziğin psikolojik etkileri hakkında konuşabiliriz.',
-        'Bu sanatçının kariyer yolculuğu gerçekten ilham verici. Başka hangi sanatçıları takip ediyorsunuz?',
-        'Müzik türleri arasında geçiş yapmak her zaman ilginç. Hangi türleri keşfetmek istiyorsunuz?',
-      ];
-
-      const randomResponse =
-        aiResponses[Math.floor(Math.random() * aiResponses.length)] ||
-        'Merhaba! Size nasıl yardımcı olabilirim?';
-
-      const aiMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        text: randomResponse,
-        isUser: false,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      Alert.alert('Hata', 'AI yanıtı alınırken bir hata oluştu. Lütfen tekrar deneyin.');
-
-      // Remove loading message
-      setMessages((prev) => prev.filter((msg) => !msg.isLoading));
-    } finally {
-      setIsLoading(false);
+  const handleRetry = async (messageText: string) => {
+    if (retryCount >= 3) {
+      Alert.alert('Hata', 'Maksimum deneme sayısına ulaşıldı. Lütfen daha sonra tekrar deneyin.');
+      return;
     }
+
+    setRetryCount((prev) => prev + 1);
+    await handleSendMessage(messageText);
+  };
+
+  const handleInputSubmit = async () => {
+    const messageText = inputText;
+    setInputText('');
+    await handleSendMessage(messageText);
+  };
+
+  const handleQuickAction = async (actionText: string) => {
+    await handleSendMessage(actionText);
   };
 
   const formatTime = (date: Date) => {
@@ -241,15 +195,10 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       }
 
       // Get track details first
-      const trackDetails: SpotifyTrack = await spotifyApi.getTrack(params.trackId);
+      // const trackDetails: SpotifyTrack = await spotifyApi.getTrack(params.trackId);
 
       // Start playback with the track
       await spotifyApi.startPlayback(params.trackId);
-
-      Alert.alert(
-        '🎵 Çalınıyor',
-        `${trackDetails.name} - ${trackDetails.artists.map((artist) => artist.name).join(', ')}`
-      );
     } catch (error) {
       console.error('Error playing track:', error);
       Alert.alert(
@@ -264,29 +213,33 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     Alert.alert('🚧 Yakında', 'Bu özellik yakında gelecek!');
   };
 
-  const renderMessage = (message: Message) => (
+  const renderMessage = (message: ChatMessage) => (
     <View
       key={message.id}
       style={[
         styles.messageContainer,
-        message.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
+        message.role === 'user' ? styles.userMessageContainer : styles.aiMessageContainer,
       ]}
     >
       <View
         style={[
           styles.messageBubble,
-          message.isUser ? styles.userMessageBubble : styles.aiMessageBubble,
+          message.role === 'user' ? styles.userMessageBubble : styles.aiMessageBubble,
           message.isLoading && styles.loadingMessageBubble,
         ]}
       >
         <Text
           style={[
             styles.messageText,
-            message.isUser ? styles.userMessageText : styles.aiMessageText,
+            message.role === 'user' ? styles.userMessageText : styles.aiMessageText,
             message.isLoading && styles.loadingMessageText,
           ]}
+          accessible={true}
+          accessibilityLabel={`${message.role === 'user' ? 'Kullanıcı' : 'AI'} mesajı: ${
+            message.content
+          }`}
         >
-          {message.text}
+          {message.content}
         </Text>
         {message.isLoading && (
           <View style={styles.loadingDots}>
@@ -305,8 +258,10 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       <Text style={styles.quickActionsTitle}>Hızlı Seçenekler</Text>
       <TouchableOpacity
         style={styles.quickActionButton}
-        onPress={() => handleQuickAction('Şarkı sözleri')}
+        onPress={() => handleQuickAction('Bana bu şarkının sözlerini söyler misin?')}
         disabled={isLoading}
+        accessible={true}
+        accessibilityLabel="Şarkı sözleri hakkında sor"
       >
         <Feather name="music" size={20} color="#fff" />
         <Text style={styles.quickActionText}>Şarkı sözleri</Text>
@@ -317,8 +272,10 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
 
       <TouchableOpacity
         style={styles.quickActionButton}
-        onPress={() => handleQuickAction('Hikayesi')}
+        onPress={() => handleQuickAction('Bana bu şarkının oluşturulma hikayesini söyler misin?')}
         disabled={isLoading}
+        accessible={true}
+        accessibilityLabel="Şarkının hikayesi hakkında sor"
       >
         <Feather name="book-open" size={20} color="#fff" />
         <Text style={styles.quickActionText}>Hikayesi</Text>
@@ -329,6 +286,8 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         style={styles.quickActionButton}
         onPress={() => handleQuickAction('Bu Nedir?')}
         disabled={isLoading}
+        accessible={true}
+        accessibilityLabel="Yardım al"
       >
         <Feather name="info" size={20} color="#fff" />
         <Text style={styles.quickActionText}>Bu Nedir?</Text>
@@ -345,7 +304,12 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.goBack()}
+          accessible={true}
+          accessibilityLabel="Geri git"
+        >
           <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -357,10 +321,29 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
             </Text>
           )}
         </View>
-        <TouchableOpacity style={styles.moreButton} onPress={() => setIsModalVisible(true)}>
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => setIsModalVisible(true)}
+          accessible={true}
+          accessibilityLabel="Daha fazla seçenek"
+        >
           <Feather name="more-vertical" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Error Banner */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            onPress={() => setError(null)}
+            accessible={true}
+            accessibilityLabel="Hatayı kapat"
+          >
+            <Feather name="x" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Messages */}
       <ScrollView
@@ -387,16 +370,20 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
               onChangeText={setInputText}
               multiline
               maxLength={500}
-              onSubmitEditing={handleSendMessage}
+              onSubmitEditing={handleInputSubmit}
               returnKeyType="send"
+              accessible={true}
+              accessibilityLabel="Mesaj yaz"
             />
             <TouchableOpacity
               style={[
                 styles.sendButton,
                 (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
               ]}
-              onPress={handleSendMessage}
+              onPress={handleInputSubmit}
               disabled={!inputText.trim() || isLoading}
+              accessible={true}
+              accessibilityLabel="Mesaj gönder"
             >
               <Feather
                 name="send"
@@ -421,14 +408,24 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
           onPress={() => setIsModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.modalButton} onPress={handlePlayAction}>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handlePlayAction}
+              accessible={true}
+              accessibilityLabel="Şarkıyı çal"
+            >
               <Feather name="play" size={20} color="#fff" />
               <Text style={styles.modalButtonText}>Çal</Text>
             </TouchableOpacity>
 
             <View style={styles.modalDivider} />
 
-            <TouchableOpacity style={styles.modalButton} onPress={handleComingSoonAction}>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleComingSoonAction}
+              accessible={true}
+              accessibilityLabel="Yakında gelecek özellik"
+            >
               <Feather name="clock" size={20} color="#fff" />
               <Text style={styles.modalButtonText}>Yakında</Text>
             </TouchableOpacity>
@@ -640,5 +637,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
     width: '100%',
     marginVertical: 15,
+  },
+  errorBanner: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+    marginRight: 10,
   },
 });

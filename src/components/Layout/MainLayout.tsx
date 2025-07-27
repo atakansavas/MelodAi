@@ -78,8 +78,11 @@ export default function MainLayout({
   };
 
   const handleChatSubmit = () => {
-    if (chatInput.trim() && onChatSubmit) {
-      onChatSubmit(chatInput);
+    if (chatInput.trim()) {
+      // Navigate to chat detail screen with the initial message
+      router.goToChatDetail({
+        initialMessage: chatInput.trim(),
+      });
       setChatInput('');
     }
   };
@@ -169,29 +172,64 @@ export default function MainLayout({
           >
             <View
               style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: 20,
-                height: _icons - _spacing,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                borderRadius: 25,
+                height: _icons,
                 justifyContent: 'center',
-                padding: _spacing / 2,
+                paddingHorizontal: 4,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+                elevation: 5,
               }}
             >
-              <TextInput
+              <View
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   backgroundColor: '#fff',
-                  borderRadius: 20,
-                  height: _icons - _spacing * 2,
-                  paddingHorizontal: 16,
-                  color: '#000',
-                  fontSize: 14,
+                  borderRadius: 22,
+                  height: _icons - 8,
+                  paddingLeft: 16,
+                  paddingRight: 4,
                 }}
-                placeholder="Bir şarkı hakkında konuşun..."
-                placeholderTextColor="#666"
-                value={chatInput}
-                onChangeText={setChatInput}
-                onSubmitEditing={handleChatSubmit}
-                returnKeyType="send"
-              />
+              >
+                <TextInput
+                  style={{
+                    flex: 1,
+                    color: '#333',
+                    fontSize: 15,
+                    fontWeight: '400',
+                    paddingVertical: 0,
+                  }}
+                  placeholder="Bir şarkı hakkında sohbet et..."
+                  placeholderTextColor="#999"
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  onSubmitEditing={handleChatSubmit}
+                  returnKeyType="send"
+                  multiline={false}
+                />
+                <TouchableOpacity
+                  onPress={handleChatSubmit}
+                  style={{
+                    backgroundColor: chatInput.trim() ? '#1DB954' : '#E0E0E0',
+                    borderRadius: 18,
+                    width: 36,
+                    height: 36,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginLeft: 8,
+                  }}
+                  disabled={!chatInput.trim()}
+                >
+                  <Feather name="send" size={16} color={chatInput.trim() ? '#fff' : '#999'} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}

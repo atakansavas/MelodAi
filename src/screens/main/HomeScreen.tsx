@@ -20,7 +20,7 @@ import { useRouter } from '../../hooks/useRouter';
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  console.log('🚀 ~ HomeScreen ~ user:', user);
+
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

@@ -17,5 +17,6 @@ export interface NavigationParams {
   trackId?: string;
   trackName?: string;
   artistName?: string;
+  initialMessage?: string;
   [key: string]: any;
 }

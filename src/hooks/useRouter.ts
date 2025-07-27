@@ -11,8 +11,12 @@ export const useRouter = () => {
   const goToHome = useCallback(() => replace('MAIN_HOME'), [replace]);
   const goToSearch = useCallback(() => navigate('MAIN_SEARCH'), [navigate]);
   const goToChatDetail = useCallback(
-    (params?: { trackId?: string; trackName?: string; artistName?: string }) =>
-      navigate('MAIN_CHAT_DETAIL', params),
+    (params?: {
+      trackId?: string;
+      trackName?: string;
+      artistName?: string;
+      initialMessage?: string;
+    }) => navigate('MAIN_CHAT_DETAIL', params),
     [navigate]
   );
   const goToSettings = useCallback(() => navigate('MAIN_SETTINGS'), [navigate]);

@@ -54,8 +54,20 @@ export class SpotifyApiService {
       }
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
+    // Check if response has content to parse
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
 
-    return response.json();
+    if (
+      contentLength &&
+      contentLength !== '0' &&
+      contentType &&
+      contentType.includes('application/json')
+    ) {
+      return response.json();
+    }
+
+    return true;
   }
 
   async getCurrentUser(): Promise<SpotifyUser> {
@@ -108,11 +120,13 @@ export class SpotifyApiService {
 
   async startPlayback(trackId: string) {
     const trackUri = `spotify:track:${trackId}`;
-    return this.makeAuthenticatedRequest('/me/player/play', {
+    const res = await this.makeAuthenticatedRequest('/me/player/play', {
       method: 'PUT',
       body: JSON.stringify({
         uris: [trackUri],
       }),
     });
+    console.log('🚀 ~ SpotifyApiService ~ startPlayback ~ res:', res);
+    return res;
   }
 }

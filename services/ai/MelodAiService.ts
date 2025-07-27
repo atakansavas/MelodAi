@@ -73,6 +73,27 @@ export interface ChatStartData {
   timestamp: string;
 }
 
+// Add new interfaces for the chat API
+export interface ChatMessagePayload {
+  message: string;
+  sessionId?: string;
+  context: Record<string, any>;
+}
+
+export interface ChatApiResponse {
+  success: boolean;
+  data: {
+    response: string;
+    sessionId: string;
+    isNewSession: boolean;
+  };
+  meta: {
+    requestId: string;
+    responseTime: number;
+    timestamp: string;
+  };
+}
+
 export interface ServiceCallOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
@@ -122,6 +143,7 @@ export class MelodAiService {
         ...(body && { body: JSON.stringify(body) }),
       });
 
+      console.log('🚀 ~ MelodAiService ~ makeServiceCall ~ response:', response);
       if (!response.ok) {
         throw new Error(`Service call failed: ${response.status} ${response.statusText}`);
       }
@@ -155,25 +177,28 @@ export class MelodAiService {
    */
   public async sendMessage(
     message: string,
-    chatId?: string,
-    context?: {
-      trackId?: string;
-      trackName?: string;
-      artistName?: string;
-    }
-  ): Promise<any> {
+    sessionId: string,
+    context: Record<string, any> = {}
+  ): Promise<ChatApiResponse> {
     try {
-      const response = await this.makeServiceCall('/chat/message', {
+      const payload: ChatMessagePayload = {
+        message,
+        ...(sessionId && { sessionId }),
+        context,
+      };
+      console.log('🚀 ~ MelodAiService ~ sendMessage ~ payload:', payload);
+
+      const response = await this.makeServiceCall('chat', {
         method: 'POST',
-        body: {
-          message,
-          chatId,
-          context,
-          timestamp: new Date().toISOString(),
-        },
+        body: payload,
       });
 
-      return response;
+      // Validate response structure
+      if (!response.success || !response.data) {
+        throw new Error('Invalid response format from AI service');
+      }
+
+      return response as ChatApiResponse;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
