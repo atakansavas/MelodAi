@@ -105,4 +105,7 @@ export const SPOTIFY_SCOPES = [
   'playlist-read-collaborative',
   'streaming',
   'user-modify-playback-state',
+  'user-library-read',
+  'user-read-playback-state',
+  'user-modify-playback-state',
 ];
