@@ -106,6 +106,8 @@ export const SPOTIFY_SCOPES = [
   'streaming',
   'user-modify-playback-state',
   'user-library-read',
+  'user-library-modify',
+  'user-follow-modify',
   'user-read-playback-state',
   'playlist-modify-public',
   'playlist-modify-private',
