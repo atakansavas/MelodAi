@@ -1,103 +1,117 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
+import { MelodAiService } from '../../../services/ai/MelodAiService';
+import type { ChatHistoryResponse, ChatSession } from '../../../types/chat';
 import MainLayout from '../../components/Layout/MainLayout';
 import { useRouter } from '../../hooks/useRouter';
 
-interface ChatHistory {
-  id: string;
-  trackName: string;
-  artistName: string;
-  trackId?: string;
-  lastMessage: string;
-  timestamp: Date;
-  messageCount: number;
+interface LoadingState {
+  initial: boolean;
+  pagination: boolean;
+  refreshing: boolean;
 }
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const [chatHistories, setChatHistories] = useState<ChatHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [loading, setLoading] = useState<LoadingState>({
+    initial: true,
+    pagination: false,
+    refreshing: false,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const melodAiService = MelodAiService.getInstance();
+
+  const loadChatSessions = useCallback(
+    async (page: number = 1, isRefresh: boolean = false) => {
+      try {
+        if (page === 1) {
+          setLoading((prev) => ({ ...prev, initial: !isRefresh, refreshing: isRefresh }));
+          if (isRefresh) {
+            setError(null);
+          }
+        } else {
+          setLoading((prev) => ({ ...prev, pagination: true }));
+        }
+
+        const response: ChatHistoryResponse = await melodAiService.getChatHistorySessions(page, 10);
+
+        if (response.success) {
+          const newSessions = response.data.sessions;
+
+          if (page === 1) {
+            setSessions(newSessions);
+          } else {
+            setSessions((prevSessions) => [...prevSessions, ...newSessions]);
+          }
+
+          setCurrentPage(response.data.pagination.page);
+          setHasMore(response.data.pagination.hasMore);
+          setError(null);
+        } else {
+          throw new Error('Failed to load chat sessions');
+        }
+      } catch (error) {
+        console.error('Error loading chat sessions:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Sohbet geçmişi yüklenirken bir hata oluştu.';
+        setError(errorMessage);
+
+        if (page === 1) {
+          Alert.alert('Hata', errorMessage);
+        }
+      } finally {
+        setLoading({
+          initial: false,
+          pagination: false,
+          refreshing: false,
+        });
+      }
+    },
+    [melodAiService]
+  );
 
   useEffect(() => {
-    loadChatHistories();
-  }, []);
+    loadChatSessions(1);
+  }, [loadChatSessions]);
 
-  const loadChatHistories = async () => {
-    try {
-      setIsLoading(true);
+  const handleRefresh = useCallback(() => {
+    loadChatSessions(1, true);
+  }, [loadChatSessions]);
 
-      // Simulate loading chat histories
-      // In a real app, this would come from a storage service or API
-      const mockHistories: ChatHistory[] = [
-        {
-          id: '1',
-          trackName: 'Bohemian Rhapsody',
-          artistName: 'Queen',
-          trackId: 'track1',
-          lastMessage: 'Bu şarkının hikayesi gerçekten etkileyici...',
-          timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-          messageCount: 12,
-        },
-        {
-          id: '2',
-          trackName: 'Imagine',
-          artistName: 'John Lennon',
-          trackId: 'track2',
-          lastMessage: 'Şarkı sözleri hakkında konuştuk',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-          messageCount: 8,
-        },
-        {
-          id: '3',
-          trackName: 'Hotel California',
-          artistName: 'Eagles',
-          trackId: 'track3',
-          lastMessage: 'Gitar sololarının analizi...',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-          messageCount: 15,
-        },
-        {
-          id: '4',
-          trackName: 'Billie Jean',
-          artistName: 'Michael Jackson',
-          trackId: 'track4',
-          lastMessage: 'Dans hareketleri ve müzik uyumu',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-          messageCount: 6,
-        },
-        {
-          id: '5',
-          trackName: 'Stairway to Heaven',
-          artistName: 'Led Zeppelin',
-          trackId: 'track5',
-          lastMessage: 'Rock müziğinin evrimi üzerine',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-          messageCount: 20,
-        },
-      ];
-
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setChatHistories(mockHistories);
-    } catch (error) {
-      console.error('Error loading chat histories:', error);
-      Alert.alert('Hata', 'Sohbet geçmişi yüklenirken bir hata oluştu.');
-    } finally {
-      setIsLoading(false);
+  const handleLoadMore = useCallback(() => {
+    if (!loading.pagination && hasMore && !error) {
+      loadChatSessions(currentPage + 1);
     }
-  };
+  }, [loading.pagination, hasMore, error, currentPage, loadChatSessions]);
 
-  const formatTimestamp = (timestamp: Date): string => {
+  const handleRetry = useCallback(() => {
+    setError(null);
+    loadChatSessions(1);
+  }, [loadChatSessions]);
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
     if (diffInMinutes < 60) {
-      return `${diffInMinutes} dakika önce`;
+      return diffInMinutes < 1 ? 'Şimdi' : `${diffInMinutes} dakika önce`;
     } else if (diffInMinutes < 1440) {
-      // 24 hours
       const hours = Math.floor(diffInMinutes / 60);
       return `${hours} saat önce`;
     } else {
@@ -107,109 +121,218 @@ export default function HistoryScreen() {
       } else if (days < 7) {
         return `${days} gün önce`;
       } else {
-        return timestamp.toLocaleDateString('tr-TR');
+        return date.toLocaleDateString('tr-TR', {
+          day: 'numeric',
+          month: 'long',
+          year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        });
       }
     }
   };
 
-  const handleChatPress = (chatHistory: ChatHistory) => {
-    router.goToChatDetail({
-      trackId: chatHistory.trackId,
-      trackName: chatHistory.trackName,
-      artistName: chatHistory.artistName,
-    });
+  const formatDuration = (durationMs: number): string => {
+    const minutes = Math.floor(durationMs / (1000 * 60));
+    if (minutes < 60) {
+      return `${minutes} dk`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}s ${remainingMinutes}dk`;
   };
 
-  const handleDeleteChat = (chatId: string) => {
-    Alert.alert('Sohbeti Sil', 'Bu sohbeti silmek istediğinizden emin misiniz?', [
-      {
-        text: 'İptal',
-        style: 'cancel',
-      },
-      {
-        text: 'Sil',
-        style: 'destructive',
-        onPress: () => {
-          setChatHistories((prevHistories) =>
-            prevHistories.filter((history) => history.id !== chatId)
-          );
-        },
-      },
-    ]);
-  };
+  const handleSessionPress = useCallback(
+    (session: ChatSession) => {
+      router.goToChatDetail({
+        sessionId: session.id,
+      });
+    },
+    [router]
+  );
 
-  const renderChatHistoryItem = ({ item }: { item: ChatHistory }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => handleChatPress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.chatItemContent}>
-        <View style={styles.chatItemHeader}>
-          <View style={styles.trackInfo}>
-            <Text style={styles.trackName} numberOfLines={1}>
-              {item.trackName}
-            </Text>
-            <Text style={styles.artistName} numberOfLines={1}>
-              {item.artistName}
-            </Text>
+  const renderSessionCard = useCallback(
+    ({ item }: { item: ChatSession }) => (
+      <TouchableOpacity
+        style={styles.sessionCard}
+        onPress={() => handleSessionPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.dateContainer}>
+            <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
           </View>
-          <View style={styles.chatMeta}>
-            <Text style={styles.timestamp}>{formatTimestamp(item.timestamp)}</Text>
-            <View style={styles.messageCountBadge}>
-              <Text style={styles.messageCount}>{item.messageCount}</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Feather name="message-circle" size={12} color="rgba(255,255,255,0.6)" />
+              <Text style={styles.statText}>{item.message_count}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
+              <Text style={styles.statText}>{formatDuration(item.session_duration_ms)}</Text>
             </View>
           </View>
         </View>
-        <Text style={styles.lastMessage} numberOfLines={2}>
-          {item.lastMessage}
-        </Text>
+
+        <View style={styles.cardContent}>
+          <Text style={styles.firstMessage} numberOfLines={2}>
+            {item.preview.first_user_message}
+          </Text>
+          <View style={styles.lastMessageContainer}>
+            <Feather name="corner-down-right" size={14} color="rgba(255,255,255,0.4)" />
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {item.preview.last_message}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <View style={styles.interactionTypeContainer}>
+            <View
+              style={[styles.interactionBadge, getInteractionBadgeStyle(item.interaction_type)]}
+            >
+              <Text style={styles.interactionText}>
+                {getInteractionTypeLabel(item.interaction_type)}
+              </Text>
+            </View>
+          </View>
+          <Feather name="chevron-right" size={16} color="rgba(255,255,255,0.3)" />
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleSessionPress]
+  );
+
+  const getInteractionTypeLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      general: 'Genel',
+      analysis: 'Analiz',
+      recommendation: 'Öneri',
+      lyrics: 'Sözler',
+      mood: 'Ruh Hali',
+    };
+    return labels[type] || 'Genel';
+  };
+
+  const getInteractionBadgeStyle = (type: string) => {
+    const styles: Record<string, any> = {
+      general: { backgroundColor: 'rgba(29, 185, 84, 0.2)', borderColor: 'rgba(29, 185, 84, 0.5)' },
+      analysis: {
+        backgroundColor: 'rgba(30, 144, 255, 0.2)',
+        borderColor: 'rgba(30, 144, 255, 0.5)',
+      },
+      recommendation: {
+        backgroundColor: 'rgba(255, 165, 0, 0.2)',
+        borderColor: 'rgba(255, 165, 0, 0.5)',
+      },
+      lyrics: {
+        backgroundColor: 'rgba(138, 43, 226, 0.2)',
+        borderColor: 'rgba(138, 43, 226, 0.5)',
+      },
+      mood: { backgroundColor: 'rgba(255, 20, 147, 0.2)', borderColor: 'rgba(255, 20, 147, 0.5)' },
+    };
+    return styles[type] || styles.general;
+  };
+
+  const renderFooter = useCallback(() => {
+    if (!loading.pagination) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#1DB954" />
+        <Text style={styles.footerLoaderText}>Daha fazla sohbet yükleniyor...</Text>
       </View>
+    );
+  }, [loading.pagination]);
 
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteChat(item.id)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Feather name="trash-2" size={16} color="rgba(255,255,255,0.5)" />
-      </TouchableOpacity>
-    </TouchableOpacity>
+  const renderEmptyState = useCallback(
+    () => (
+      <View style={styles.emptyState}>
+        <Feather name="message-circle" size={64} color="rgba(255,255,255,0.3)" />
+        <Text style={styles.emptyStateTitle}>Henüz sohbet geçmişiniz yok</Text>
+        <Text style={styles.emptyStateSubtitle}>
+          Bir şarkı hakkında konuşmaya başladığınızda, sohbetleriniz burada görünecek.
+        </Text>
+        <TouchableOpacity style={styles.startChatButton} onPress={() => router.goToHome()}>
+          <Text style={styles.startChatButtonText}>Sohbete Başla</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [router]
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Feather name="message-circle" size={64} color="rgba(255,255,255,0.3)" />
-      <Text style={styles.emptyStateTitle}>Henüz sohbet geçmişiniz yok</Text>
-      <Text style={styles.emptyStateSubtitle}>
-        Bir şarkı hakkında konuşmaya başladığınızda, sohbetleriniz burada görünecek.
-      </Text>
-      <TouchableOpacity style={styles.startChatButton} onPress={() => router.goToHome()}>
-        <Text style={styles.startChatButtonText}>Sohbete Başla</Text>
-      </TouchableOpacity>
-    </View>
+  const renderErrorState = useCallback(
+    () => (
+      <View style={styles.errorState}>
+        <Feather name="wifi-off" size={64} color="rgba(255,255,255,0.3)" />
+        <Text style={styles.errorTitle}>Bağlantı Hatası</Text>
+        <Text style={styles.errorSubtitle}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <Feather name="refresh-cw" size={16} color="#fff" />
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [error, handleRetry]
   );
 
-  const renderLoadingState = () => (
-    <View style={styles.loadingState}>
-      <Feather name="loader" size={32} color="#fff" />
-      <Text style={styles.loadingText}>Sohbet geçmişi yükleniyor...</Text>
-    </View>
+  const renderLoadingState = useCallback(
+    () => (
+      <View style={styles.loadingState}>
+        <ActivityIndicator size="large" color="#1DB954" />
+        <Text style={styles.loadingText}>Sohbet geçmişi yükleniyor...</Text>
+      </View>
+    ),
+    []
   );
+
+  const getSubtitle = (): string => {
+    if (loading.initial) return 'Yükleniyor...';
+    if (error) return 'Bağlantı hatası';
+    if (sessions.length === 0) return 'Henüz sohbet yok';
+    return `${sessions.length} sohbet`;
+  };
+
+  if (loading.initial) {
+    return (
+      <MainLayout title="Sohbet Geçmişi" subtitle={getSubtitle()}>
+        {renderLoadingState()}
+      </MainLayout>
+    );
+  }
+
+  if (error && sessions.length === 0) {
+    return (
+      <MainLayout title="Sohbet Geçmişi" subtitle={getSubtitle()}>
+        {renderErrorState()}
+      </MainLayout>
+    );
+  }
 
   return (
-    <MainLayout title="Sohbet Geçmişi" subtitle={`${chatHistories.length} sohbet`}>
-      {isLoading ? (
-        renderLoadingState()
-      ) : chatHistories.length === 0 ? (
+    <MainLayout title="Sohbet Geçmişi" subtitle={getSubtitle()}>
+      {sessions.length === 0 ? (
         renderEmptyState()
       ) : (
         <FlatList
-          data={chatHistories}
-          renderItem={renderChatHistoryItem}
+          data={sessions}
+          renderItem={renderSessionCard}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading.refreshing}
+              onRefresh={handleRefresh}
+              colors={['#1DB954']}
+              tintColor="#1DB954"
+              title="Sohbet geçmişi yenileniyor..."
+              titleColor="rgba(255,255,255,0.7)"
+            />
+          }
         />
       )}
     </MainLayout>
@@ -220,68 +343,97 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingVertical: 16,
   },
-  chatItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
+  sessionCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  chatItemContent: {
-    flex: 1,
-  },
-  chatItemHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  trackInfo: {
-    flex: 1,
-    marginRight: 12,
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  trackName: {
+  dateText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '500',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '500',
+  },
+  cardContent: {
+    marginBottom: 12,
+  },
+  firstMessage: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 2,
+    lineHeight: 22,
+    marginBottom: 8,
   },
-  artistName: {
+  lastMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  lastMessage: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.7)',
+    flex: 1,
+    fontStyle: 'italic',
   },
-  chatMeta: {
-    alignItems: 'flex-end',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: 4,
-  },
-  messageCountBadge: {
-    backgroundColor: '#1DB954',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 20,
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  messageCount: {
+  interactionTypeContainer: {
+    flex: 1,
+  },
+  interactionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  interactionText: {
     fontSize: 10,
     fontWeight: '600',
     color: '#fff',
   },
-  lastMessage: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 18,
-  },
-  deleteButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
   separator: {
     height: 12,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 8,
+  },
+  footerLoaderText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
   },
   emptyState: {
     flex: 1,
@@ -311,6 +463,41 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   startChatButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  errorState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#1DB954',
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  retryButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',

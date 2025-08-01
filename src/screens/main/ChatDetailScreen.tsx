@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 
 import { MelodAiService } from '@services/ai';
-import { SpotifyApiService } from '@services/spotify';
+import { SpotifyApiService, SpotifyAuthService } from '@services/spotify';
 
 import {
   ChatMessage,
@@ -93,6 +93,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     selectedTrackName: params?.trackName,
     selectedArtistName: params?.artistName,
     timestamp: new Date().toISOString(),
+    currentToken: SpotifyAuthService.getInstance().getAccessToken(),
   });
 
   const handleSendMessage = async (messageText: string) => {
