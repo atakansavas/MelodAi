@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
+import { useAuth } from '@/src/contexts/AuthContext';
+
 import { useRouter } from '../../hooks/useRouter';
 import { useNavigation } from '../../navigation/NavigationStore';
 
@@ -41,11 +43,10 @@ export default function MainLayout({
   const { currentScreen } = useNavigation();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
-    // TODO: Implement Supabase logout
-    console.log('Logout functionality will be implemented with Supabase');
-    router.goToLogin();
+    await logout();
   };
 
   const handleMenuPress = (action: string) => {

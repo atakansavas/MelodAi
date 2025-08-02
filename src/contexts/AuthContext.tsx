@@ -173,7 +173,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: {
           redirectTo: redirectUri,
           skipBrowserRedirect: true,
-
           scopes:
             'user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative streaming',
         },
@@ -182,7 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await WebBrowser.openAuthSessionAsync(data?.url ?? '', redirectUri);
       if (res.type === 'success') {
         const session = await createSessionFromUrl(res.url);
-        console.log('🚀 ~ login ~ session:', session);
+        await storeSpotifyTokens(
+          session?.provider_token ?? '',
+          session?.provider_refresh_token ?? ''
+        );
+
         setState((prev) => ({ ...prev, isNewUser: false }));
       } else if (res.type === 'cancel') {
         console.log('OAuth cancelled by user');
@@ -217,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: false,
         isNewUser: false,
       });
+      router.goToLogin();
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -292,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isNewUser,
         });
         router.goToHome();
-      } else if (event === 'INITIAL_SESSION') {
+      } else if (event === 'INITIAL_SESSION' && session?.user) {
         router.goToHome();
       } else if (event === 'SIGNED_OUT') {
         setState({
