@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from '../../hooks/useRouter';
 
 const { width, height } = Dimensions.get('screen');
@@ -41,6 +42,7 @@ Notifications.setNotificationHandler({
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login, isLoading } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,24 +71,21 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = useCallback(async () => {
-    if (isAuthenticating) return;
+    if (isAuthenticating || isLoading) return;
 
     setIsAuthenticating(true);
     setError(null);
 
     try {
-      // TODO: Implement Supabase authentication here
-      console.log('Login functionality will be implemented with Supabase');
-
-      // For now, just navigate to onboarding
-      router.goToOnboarding();
+      await login();
+      // Navigation will be handled by the auth context
     } catch (error: any) {
       const errorMessage = error?.message || 'An unexpected error occurred during login';
       handleAuthError(errorMessage, error);
     } finally {
       setIsAuthenticating(false);
     }
-  }, [isAuthenticating, router, handleAuthError]);
+  }, [isAuthenticating, isLoading, login, handleAuthError]);
 
   if (!fontsLoaded) {
     return (
@@ -163,20 +162,25 @@ export default function LoginScreen() {
         {/* Login Button */}
         <Pressable
           onPress={handleLogin}
-          disabled={isAuthenticating}
+          disabled={isAuthenticating || isLoading}
           hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
           style={styles.loginButton}
         >
-          <View style={[styles.loginButtonContent, isAuthenticating && styles.loginButtonDisabled]}>
-            {isAuthenticating ? (
+          <View
+            style={[
+              styles.loginButtonContent,
+              (isAuthenticating || isLoading) && styles.loginButtonDisabled,
+            ]}
+          >
+            {isAuthenticating || isLoading ? (
               <>
                 <MaterialIcons name="hourglass-empty" size={28} color="#1DB954" />
-                <Text style={styles.loginButtonText}>Connecting...</Text>
+                <Text style={styles.loginButtonText}>Connecting to Spotify...</Text>
               </>
             ) : (
               <>
                 <Ionicons name="musical-notes" size={28} color="#1DB954" />
-                <Text style={styles.loginButtonText}>Continue with MelodAi</Text>
+                <Text style={styles.loginButtonText}>Continue with Spotify</Text>
               </>
             )}
           </View>

@@ -5,11 +5,13 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { LoadingSpinner } from '@components/common';
 import { useAppStore } from '@store/app';
 
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useRouter } from './hooks/useRouter';
 import Navigator from './navigation/Navigator';
 
-function App() {
+function AppContent() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading, isNewUser } = useAuth();
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const { checkOnboardingStatus } = useAppStore();
@@ -52,12 +54,24 @@ function App() {
     try {
       console.log('Starting app initialization...');
 
-      // Check onboarding status
+      // Wait for auth to load
+      if (authLoading) {
+        return;
+      }
+
+      // If not authenticated, go to login
+      if (!isAuthenticated) {
+        console.log('User not authenticated, redirecting to login');
+        router.goToLogin();
+        return;
+      }
+
+      // Check onboarding status for authenticated users
       const onboardingCompleted = await checkOnboardingStatus();
       console.log('Onboarding completed:', onboardingCompleted);
 
-      if (!onboardingCompleted) {
-        console.log('Onboarding not completed, redirecting to onboarding');
+      if (!onboardingCompleted || isNewUser) {
+        console.log('Onboarding not completed or new user, redirecting to onboarding');
         router.goToOnboarding();
         return;
       }
@@ -70,7 +84,7 @@ function App() {
     } finally {
       setIsInitializing(false);
     }
-  }, [checkOnboardingStatus, router, handleInitError]);
+  }, [authLoading, isAuthenticated, isNewUser, checkOnboardingStatus, router, handleInitError]);
 
   useEffect(() => {
     // Only run initialization once when component mounts
@@ -98,6 +112,14 @@ function App() {
   }
 
   return <Navigator />;
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 registerRootComponent(App);

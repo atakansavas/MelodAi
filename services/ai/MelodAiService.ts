@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { API_CONFIG } from '../../constants/config';
+import { supabase } from '../../src/lib/supabase';
 
 // Helper schemas
 const emailSchema = z.string().email('Invalid email format');
@@ -124,12 +125,23 @@ export class MelodAiService {
       const { method = 'GET', body, headers = {} } = options;
       console.log('🚀 ~ MelodAiService ~ makeServiceCall ~ url:', url);
 
+      // Get Supabase session for authentication
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...headers,
+      };
+
+      // Add authorization header if session exists
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
+        headers: authHeaders,
         ...(body && { body: JSON.stringify(body) }),
       });
 
