@@ -1,4 +1,5 @@
 import { Session } from '@supabase/supabase-js';
+import { encode as base64Encode } from 'base-64';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
@@ -114,29 +115,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSpotifyToken = async (): Promise<string | null> => {
     try {
       const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.SPOTIFY_REFRESH_TOKEN);
-      console.log('🚀 ~ refreshSpotifyToken ~ refreshToken:', refreshToken);
+
       if (!refreshToken) {
         throw new Error('No refresh token available');
       }
 
+      // Create Basic Auth header with client_id:client_secret
+      const credentials = `${SPOTIFY_CONFIG.CLIENT_ID}:${SPOTIFY_CONFIG.CLIENT_SECRET}`;
+      const base64Credentials = base64Encode(credentials);
+
       const requestBody = new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
-        client_id: SPOTIFY_CONFIG.CLIENT_ID,
       });
-      console.log('🚀 ~ refreshSpotifyToken ~ requestBody:', requestBody.toString());
 
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${base64Credentials}`,
         },
         body: requestBody.toString(),
       });
 
-      console.log('🚀 ~ refreshSpotifyToken ~ response:', response);
       if (!response.ok) {
-        throw new Error('Failed to refresh Spotify token');
+        const errorData = await response.text();
+        console.error('Spotify token refresh error:', errorData);
+        console.error('Response status:', response.status);
+        console.error('Response headers:', response.headers);
+        throw new Error(
+          `Failed to refresh Spotify token: ${response.status} ${response.statusText} - ${errorData}`
+        );
       }
 
       const data = await response.json();
@@ -150,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createSessionFromUrl = async (url: string) => {
     const { params, errorCode } = QueryParams.getQueryParams(url);
-    console.log('🚀 ~ createSessionFromUrl ~ params:', params);
 
     if (errorCode) throw new Error(errorCode);
     const { access_token, refresh_token, provider_refresh_token, provider_token } = params;

@@ -118,3 +118,32 @@ export interface ChatHistoryResponse {
     };
   };
 }
+
+// Supabase chat_sessions table types
+export interface SupabaseChatSession {
+  id: string;
+  user_id: string;
+  messages: ChatMessage[];
+  spotify_context: {
+    trackId?: string;
+    trackName?: string;
+    artistName?: string;
+    albumName?: string;
+    albumArt?: string;
+    duration?: number;
+  } | null;
+  session_metadata: {
+    message_count: number;
+    session_duration_ms: number;
+    interaction_type: string;
+    first_user_message?: string;
+    last_message?: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseChatSessionsResponse {
+  data: SupabaseChatSession[] | null;
+  error: any;
+}

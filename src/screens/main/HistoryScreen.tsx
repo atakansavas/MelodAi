@@ -11,10 +11,11 @@ import {
   View,
 } from 'react-native';
 
-import { MelodAiService } from '../../../services/ai/MelodAiService';
-import type { ChatHistoryResponse, ChatSession } from '../../../types/chat';
+import type { SupabaseChatSession } from '../../../types/chat';
 import MainLayout from '../../components/Layout/MainLayout';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from '../../hooks/useRouter';
+import { supabase } from '../../lib/supabase';
 
 interface LoadingState {
   initial: boolean;
@@ -24,7 +25,7 @@ interface LoadingState {
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [sessions, setSessions] = useState<SupabaseChatSession[]>([]);
   const [loading, setLoading] = useState<LoadingState>({
     initial: true,
     pagination: false,
@@ -34,11 +35,15 @@ export default function HistoryScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const melodAiService = MelodAiService.getInstance();
+  const { user } = useAuth();
 
   const loadChatSessions = useCallback(
     async (page: number = 1, isRefresh: boolean = false) => {
       try {
+        if (!user?.id) {
+          throw new Error('Kullanıcı kimliği bulunamadı');
+        }
+
         if (page === 1) {
           setLoading((prev) => ({ ...prev, initial: !isRefresh, refreshing: isRefresh }));
           if (isRefresh) {
@@ -48,10 +53,19 @@ export default function HistoryScreen() {
           setLoading((prev) => ({ ...prev, pagination: true }));
         }
 
-        const response: ChatHistoryResponse = await melodAiService.getChatHistorySessions(page, 10);
+        const { data, error: supabaseError } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .range((page - 1) * 10, page * 10 - 1);
 
-        if (response.success) {
-          const newSessions = response.data.sessions;
+        if (supabaseError) {
+          throw supabaseError;
+        }
+
+        if (data) {
+          const newSessions = data;
 
           if (page === 1) {
             setSessions(newSessions);
@@ -59,8 +73,8 @@ export default function HistoryScreen() {
             setSessions((prevSessions) => [...prevSessions, ...newSessions]);
           }
 
-          setCurrentPage(response.data.pagination.page);
-          setHasMore(response.data.pagination.hasMore);
+          setCurrentPage(page);
+          setHasMore(newSessions.length === 10); // Assuming 10 items per page
           setError(null);
         } else {
           throw new Error('Failed to load chat sessions');
@@ -82,7 +96,7 @@ export default function HistoryScreen() {
         });
       }
     },
-    [melodAiService]
+    [user?.id]
   );
 
   useEffect(() => {
@@ -141,18 +155,18 @@ export default function HistoryScreen() {
   };
 
   const handleSessionPress = useCallback(
-    (session: ChatSession) => {
+    (session: SupabaseChatSession) => {
       router.goToChatDetail({
-        trackId: session.trackId,
-        trackName: session.trackName,
-        artistName: session.artistName,
+        trackId: session.spotify_context?.trackId,
+        trackName: session.spotify_context?.trackName,
+        artistName: session.spotify_context?.artistName,
       });
     },
     [router]
   );
 
   const renderSessionCard = useCallback(
-    ({ item }: { item: ChatSession }) => (
+    ({ item }: { item: SupabaseChatSession }) => (
       <TouchableOpacity
         style={styles.sessionCard}
         onPress={() => handleSessionPress(item)}
@@ -166,23 +180,25 @@ export default function HistoryScreen() {
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Feather name="message-circle" size={12} color="rgba(255,255,255,0.6)" />
-              <Text style={styles.statText}>{item.message_count}</Text>
+              <Text style={styles.statText}>{item.session_metadata.message_count}</Text>
             </View>
             <View style={styles.statItem}>
               <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
-              <Text style={styles.statText}>{formatDuration(item.session_duration_ms)}</Text>
+              <Text style={styles.statText}>
+                {formatDuration(item.session_metadata.session_duration_ms)}
+              </Text>
             </View>
           </View>
         </View>
 
         <View style={styles.cardContent}>
           <Text style={styles.firstMessage} numberOfLines={2}>
-            {item.preview.first_user_message}
+            {item.session_metadata.first_user_message || 'Sohbet başlatıldı'}
           </Text>
           <View style={styles.lastMessageContainer}>
             <Feather name="corner-down-right" size={14} color="rgba(255,255,255,0.4)" />
             <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.preview.last_message}
+              {item.session_metadata.last_message || 'Mesaj yok'}
             </Text>
           </View>
         </View>
@@ -190,10 +206,13 @@ export default function HistoryScreen() {
         <View style={styles.cardFooter}>
           <View style={styles.interactionTypeContainer}>
             <View
-              style={[styles.interactionBadge, getInteractionBadgeStyle(item.interaction_type)]}
+              style={[
+                styles.interactionBadge,
+                getInteractionBadgeStyle(item.session_metadata.interaction_type),
+              ]}
             >
               <Text style={styles.interactionText}>
-                {getInteractionTypeLabel(item.interaction_type)}
+                {getInteractionTypeLabel(item.session_metadata.interaction_type)}
               </Text>
             </View>
           </View>
