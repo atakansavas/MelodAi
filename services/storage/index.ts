@@ -40,11 +40,6 @@ export class SecureStorageService implements StorageService {
   async clear(): Promise<void> {
     try {
       await Promise.all([
-        this.removeItem(STORAGE_KEYS.ACCESS_TOKEN),
-        this.removeItem(STORAGE_KEYS.REFRESH_TOKEN),
-        this.removeItem(STORAGE_KEYS.TOKEN_EXPIRY),
-        this.removeItem(STORAGE_KEYS.USER_DATA),
-        this.removeItem(STORAGE_KEYS.AUTH_DATA),
         this.removeItem(STORAGE_KEYS.ONBOARDING_COMPLETED),
         this.removeItem(STORAGE_KEYS.SELECTED_AGENT),
       ]);
@@ -115,67 +110,4 @@ export class SecureStorageService implements StorageService {
 // Singleton instance
 export const storageService = new SecureStorageService();
 
-// Auth-specific storage utilities
-export const authStorage = {
-  async saveTokens(accessToken: string, refreshToken: string, expiresAt: number): Promise<void> {
-    await storageService.setBatch({
-      [STORAGE_KEYS.ACCESS_TOKEN]: accessToken,
-      [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken,
-      [STORAGE_KEYS.TOKEN_EXPIRY]: expiresAt.toString(),
-    });
-  },
-
-  async getTokens(): Promise<{
-    accessToken: string | null;
-    refreshToken: string | null;
-    expiresAt: number | null;
-  }> {
-    const tokens = await storageService.getBatch([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.TOKEN_EXPIRY,
-    ]);
-
-    return {
-      accessToken: tokens[STORAGE_KEYS.ACCESS_TOKEN] || null,
-      refreshToken: tokens[STORAGE_KEYS.REFRESH_TOKEN] || null,
-      expiresAt: tokens[STORAGE_KEYS.TOKEN_EXPIRY]
-        ? parseInt(tokens[STORAGE_KEYS.TOKEN_EXPIRY]!)
-        : null,
-    };
-  },
-
-  async clearTokens(): Promise<void> {
-    await storageService.removeBatch([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.TOKEN_EXPIRY,
-    ]);
-  },
-
-  async saveUser<T>(user: T): Promise<void> {
-    await storageService.setObject(STORAGE_KEYS.USER_DATA, user);
-  },
-
-  async getUser<T>(): Promise<T | null> {
-    return await storageService.getObject<T>(STORAGE_KEYS.USER_DATA);
-  },
-
-  async saveAuthData<T>(data: T): Promise<void> {
-    await storageService.setObject(STORAGE_KEYS.AUTH_DATA, data);
-  },
-
-  async getAuthData<T>(): Promise<T | null> {
-    return await storageService.getObject<T>(STORAGE_KEYS.AUTH_DATA);
-  },
-
-  async clearAll(): Promise<void> {
-    await storageService.removeBatch([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.TOKEN_EXPIRY,
-      STORAGE_KEYS.USER_DATA,
-      STORAGE_KEYS.AUTH_DATA,
-    ]);
-  },
-};
+// TODO: Add Supabase auth storage utilities when implementing Supabase

@@ -143,7 +143,9 @@ export default function HistoryScreen() {
   const handleSessionPress = useCallback(
     (session: ChatSession) => {
       router.goToChatDetail({
-        sessionId: session.id,
+        trackId: session.trackId,
+        trackName: session.trackName,
+        artistName: session.artistName,
       });
     },
     [router]

@@ -10,35 +10,30 @@ import {
   View,
 } from 'react-native';
 
-import { useAuthStore } from '@/store';
-import { SpotifyApiService } from '@services/spotify';
-
 import { SpotifyPlayHistory, SpotifyTrack } from '../../../types/spotify';
 import { MainLayout } from '../../components/Layout';
 import { useRouter } from '../../hooks/useRouter';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const [user] = useState({ display_name: 'User' }); // Placeholder user data
 
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const spotifyApi = SpotifyApiService.getInstance();
-
   const loadRecentTracks = useCallback(async () => {
     try {
       setIsLoading(true);
-      const tracks = await spotifyApi.getRecentlyPlayed(20);
-      setRecentTracks(tracks.items || []);
+      // TODO: Implement with Supabase data
+      setRecentTracks([]);
     } catch (error) {
       console.error('Error loading recent tracks:', error);
       Alert.alert('Hata', 'Şarkılar yüklenirken bir hata oluştu.');
     } finally {
       setIsLoading(false);
     }
-  }, [spotifyApi]);
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -54,15 +49,16 @@ export default function HomeScreen() {
     });
   };
 
-  const handleChatSubmit = (input: string) => {
-    if (input.trim()) {
-      // Navigate to chat detail screen for general music chat
-      router.goToChatDetail({
-        trackName: 'Genel Müzik Sohbeti',
-        artistName: '',
-      });
-    }
-  };
+  // TODO: Implement chat submit when needed
+  // const handleChatSubmit = (input: string) => {
+  //   if (input.trim()) {
+  //     // Navigate to chat detail screen for general music chat
+  //     router.goToChatDetail({
+  //       trackName: 'Genel Müzik Sohbeti',
+  //       artistName: '',
+  //     });
+  //   }
+  // };
 
   useEffect(() => {
     loadRecentTracks();
@@ -100,7 +96,6 @@ export default function HomeScreen() {
       title={`Selam ${user?.display_name}! 👋`}
       subtitle="Hangi şarkı hakkında konuşmak istersiniz?"
       showChatInput={true}
-      onChatSubmit={handleChatSubmit}
     >
       <ScrollView
         style={styles.content}

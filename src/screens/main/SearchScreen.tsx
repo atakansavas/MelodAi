@@ -12,8 +12,6 @@ import {
   View,
 } from 'react-native';
 
-import { SpotifyApiService } from '@services/spotify';
-
 import { SpotifyTrack } from '../../../types/spotify';
 import { MainLayout } from '../../components/Layout';
 import { useRouter } from '../../hooks/useRouter';
@@ -25,31 +23,26 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const spotifyApi = SpotifyApiService.getInstance();
+  const searchTracks = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
 
-  const searchTracks = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        setHasSearched(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setHasSearched(true);
-        const response = await spotifyApi.searchTracks(query, 20);
-        setSearchResults(response.tracks?.items || []);
-      } catch (error) {
-        console.error('Error searching tracks:', error);
-        Alert.alert('Hata', 'Şarkı arama sırasında bir hata oluştu.');
-        setSearchResults([]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [spotifyApi]
-  );
+    try {
+      setIsLoading(true);
+      setHasSearched(true);
+      // TODO: Implement with Supabase music service
+      setSearchResults([]);
+    } catch (error) {
+      console.error('Error searching tracks:', error);
+      Alert.alert('Hata', 'Şarkı arama sırasında bir hata oluştu.');
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Debounced search
   useEffect(() => {

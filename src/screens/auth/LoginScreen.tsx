@@ -2,10 +2,9 @@ import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-go
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import Constants from 'expo-constants';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { MotiView, useDynamicAnimation } from 'moti';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -19,16 +18,10 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { MelodAiService } from '@/services/ai';
-import { UserRegistrationData } from '@/services/ai/MelodAiService';
-
-import { SpotifyApiService, SpotifyAuthService } from '../../../services/spotify';
-import { useAuthStore } from '../../../store';
 import { useRouter } from '../../hooks/useRouter';
 
 const { width, height } = Dimensions.get('screen');
 
-const _logoSize = Math.max(width * 0.12, 56);
 const _spacing = 16;
 
 // Configure notification handling
@@ -42,57 +35,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Function to get push notification token
-async function getPushNotificationToken(): Promise<string | null> {
-  try {
-    if (!Device.isDevice) {
-      console.log('Must use physical device for Push Notifications');
-      return null;
-    }
+// TODO: Implement push notification token when needed
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
-      return null;
-    }
-
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId,
-    });
-
-    console.log('Push token:', token.data);
-    return token.data;
-  } catch (error) {
-    console.error('Error getting push token:', error);
-    return null;
-  }
-}
-
-const MelodAiLogo = () => {
-  return (
-    <View style={styles.logo}>
-      <View style={styles.logoContainer}>
-        <Ionicons name="musical-notes" size={_logoSize * 0.6} color="#1DB954" />
-        <Text style={styles.logoText}>MelodAi</Text>
-      </View>
-    </View>
-  );
-};
+// TODO: Implement logo component when needed
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setLoading, setUser, setAuthData, refreshAuthState } = useAuthStore();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const authService = SpotifyAuthService.getInstance();
-  const apiService = SpotifyApiService.getInstance();
 
   const [fontsLoaded] = useFonts({
     LatoRegular: Lato_400Regular,
@@ -105,149 +55,38 @@ export default function LoginScreen() {
     translateY: 40,
   }));
 
-  // Check if user is already authenticated on mount
-  useEffect(() => {
-    const checkExistingAuth = async () => {
-      try {
-        const authState = await authService.getAuthState();
-        if (authState.isAuthenticated && authState.user) {
-          // User is already logged in, navigate to home
-          router.goToHome();
-        }
-      } catch (error) {
-        console.error('Error checking existing auth:', error);
-      }
-    };
+  const handleAuthError = useCallback((errorMessage: string, error?: any) => {
+    console.error('Auth error:', error);
+    setError(errorMessage);
+    setIsAuthenticating(false);
 
-    checkExistingAuth();
+    Alert.alert('Authentication Error', errorMessage, [
+      {
+        text: 'Try Again',
+        onPress: () => setError(null),
+      },
+    ]);
   }, []);
 
-  const handleAuthError = useCallback(
-    (errorMessage: string, error?: any) => {
-      console.error('Auth error:', error);
-      setError(errorMessage);
-      setIsAuthenticating(false);
-      setLoading(false);
-
-      Alert.alert('Authentication Error', errorMessage, [
-        {
-          text: 'Try Again',
-          onPress: () => setError(null),
-        },
-      ]);
-    },
-    [setLoading]
-  );
-
-  const handleSpotifyLogin = useCallback(async () => {
+  const handleLogin = useCallback(async () => {
     if (isAuthenticating) return;
 
     setIsAuthenticating(true);
-    setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Get authorization request
-      const request = authService.getAuthRequest();
+      // TODO: Implement Supabase authentication here
+      console.log('Login functionality will be implemented with Supabase');
 
-      // Step 2: Prompt for authorization
-      const result = await request.promptAsync({
-        authorizationEndpoint: 'https://accounts.spotify.com/authorize',
-      });
-
-      if (result.type === 'cancel') {
-        setIsAuthenticating(false);
-        setLoading(false);
-        return;
-      }
-
-      if (result.type !== 'success') {
-        throw new Error('Authorization failed');
-      }
-
-      // Step 3: Handle auth response and get tokens
-      const tokenResponse = await authService.handleAuthResponse(result, request);
-      if (!tokenResponse) {
-        throw new Error('Failed to obtain access tokens');
-      }
-
-      // Step 4: Get user information from Spotify
-      const user = await apiService.getCurrentUser();
-      if (!user) {
-        throw new Error('Failed to get user information');
-      }
-
-      // Step 5: Save user to store and storage
-      setUser(user);
-
-      // Step 6: Get push notification token
-      const pushToken = await getPushNotificationToken();
-
-      // Step 7: Register with MelodAI service
-      const registrationData: UserRegistrationData = {
-        deviceInfo: {
-          platform: Platform.OS,
-          deviceName: Device.deviceName || 'Unknown Device',
-          deviceId: Device.brand || 'Unknown Brand',
-          osVersion: Device.osVersion || 'Unknown',
-          appVersion: Constants.expoConfig?.version || '1.0.0',
-          pushToken: pushToken || '',
-          notificationsEnabled: pushToken !== null,
-        },
-        spotifyProfile: {
-          id: user.id,
-          followers: user.followers.total,
-          images: user.images,
-          display_name: user.display_name,
-          email: user.email,
-          country: user.country,
-          product: user.product,
-          external_urls: user.external_urls,
-        },
-        preferences: {
-          preferred_genres: [],
-          language_preference: 'en',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-          listening_habits: '',
-          interaction_patterns: '',
-          privacy_settings: '',
-        },
-      };
-
-      const melodAiResponse = await MelodAiService.getInstance().userRegister(registrationData);
-
-      // Step 8: Save MelodAI response data
-      if (melodAiResponse) {
-        await setAuthData(melodAiResponse.data);
-      }
-
-      console.log('🚀 ~ handleSpotifyLogin ~ melodAiResponse:', melodAiResponse);
-      // Step 9: Refresh auth state and navigate
-      await refreshAuthState();
-
-      if (melodAiResponse.data.is_new_user) {
-        router.goToOnboarding();
-      } else {
-        router.goToHome();
-      }
+      // For now, just navigate to onboarding
+      router.goToOnboarding();
     } catch (error: any) {
       const errorMessage = error?.message || 'An unexpected error occurred during login';
       handleAuthError(errorMessage, error);
     } finally {
       setIsAuthenticating(false);
-      setLoading(false);
     }
-  }, [
-    isAuthenticating,
-    authService,
-    apiService,
-    setLoading,
-    setUser,
-    setAuthData,
-    refreshAuthState,
-    router,
-    handleAuthError,
-  ]);
+  }, [isAuthenticating, router, handleAuthError]);
 
   if (!fontsLoaded) {
     return (
@@ -321,9 +160,9 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Spotify Login Button */}
+        {/* Login Button */}
         <Pressable
-          onPress={handleSpotifyLogin}
+          onPress={handleLogin}
           disabled={isAuthenticating}
           hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
           style={styles.loginButton}
@@ -337,7 +176,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Ionicons name="musical-notes" size={28} color="#1DB954" />
-                <Text style={styles.loginButtonText}>Continue with Spotify</Text>
+                <Text style={styles.loginButtonText}>Continue with MelodAi</Text>
               </>
             )}
           </View>

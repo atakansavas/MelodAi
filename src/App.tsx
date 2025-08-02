@@ -4,7 +4,6 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { LoadingSpinner } from '@components/common';
 import { useAppStore } from '@store/app';
-import { useAuthStore } from '@store/auth';
 
 import { useRouter } from './hooks/useRouter';
 import Navigator from './navigation/Navigator';
@@ -13,7 +12,6 @@ function App() {
   const router = useRouter();
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const { checkAuth, refreshAuthState, isAuthenticated, user } = useAuthStore();
   const { checkOnboardingStatus } = useAppStore();
   const hasInitialized = useRef(false);
 
@@ -54,29 +52,7 @@ function App() {
     try {
       console.log('Starting app initialization...');
 
-      // Step 1: Refresh auth state from storage
-      await refreshAuthState();
-
-      // Step 2: Check authentication status
-      const isAuth = await checkAuth();
-      console.log('Auth check result:', isAuth);
-
-      if (!isAuth) {
-        console.log('User not authenticated, redirecting to login');
-        router.goToLogin();
-        return;
-      }
-
-      // Step 3: Check if we have user data
-      if (!user) {
-        console.log('No user data found, redirecting to login');
-        router.goToLogin();
-        return;
-      }
-
-      console.log('User authenticated:', user.display_name);
-
-      // Step 4: Check onboarding status
+      // Check onboarding status
       const onboardingCompleted = await checkOnboardingStatus();
       console.log('Onboarding completed:', onboardingCompleted);
 
@@ -86,7 +62,7 @@ function App() {
         return;
       }
 
-      // Step 5: All checks passed, go to home
+      // All checks passed, go to home
       console.log('All checks passed, redirecting to home');
       router.goToHome();
     } catch (error) {
@@ -94,7 +70,7 @@ function App() {
     } finally {
       setIsInitializing(false);
     }
-  }, [checkAuth, refreshAuthState, checkOnboardingStatus, router, user, handleInitError]);
+  }, [checkOnboardingStatus, router, handleInitError]);
 
   useEffect(() => {
     // Only run initialization once when component mounts

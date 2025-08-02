@@ -13,8 +13,6 @@ import {
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
-import { useAuthStore } from '@store/auth';
-
 import { useRouter } from '../../hooks/useRouter';
 import { useNavigation } from '../../navigation/NavigationStore';
 
@@ -31,7 +29,6 @@ interface MainLayoutProps {
   title?: string;
   subtitle?: string;
   showChatInput?: boolean;
-  onChatSubmit?: (input: string) => void;
 }
 
 export default function MainLayout({
@@ -39,16 +36,15 @@ export default function MainLayout({
   title,
   subtitle,
   showChatInput = false,
-  onChatSubmit,
 }: MainLayoutProps) {
   const router = useRouter();
-  const { logout } = useAuthStore();
   const { currentScreen } = useNavigation();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [chatInput, setChatInput] = useState('');
 
   const handleLogout = async () => {
-    await logout();
+    // TODO: Implement Supabase logout
+    console.log('Logout functionality will be implemented with Supabase');
     router.goToLogin();
   };
 

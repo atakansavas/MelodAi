@@ -88,3 +88,33 @@ export const createLoadingMessage = (sessionId: string): ChatMessage => ({
   sessionId,
   isLoading: true,
 });
+
+// TODO: Add proper types when implementing chat history
+export interface ChatSession {
+  id: string;
+  title: string;
+  lastMessage: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  session_duration_ms: number;
+  trackId?: string;
+  trackName?: string;
+  artistName?: string;
+  preview: {
+    first_user_message: string;
+    last_message: string;
+  };
+  interaction_type: string;
+}
+
+export interface ChatHistoryResponse {
+  success: boolean;
+  data: {
+    sessions: ChatSession[];
+    pagination: {
+      page: number;
+      hasMore: boolean;
+    };
+  };
+}

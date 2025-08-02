@@ -3,8 +3,6 @@ import { MotiView } from 'moti';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-import { useAuthStore } from '@store/auth';
-
 import { MainLayout } from '../../components/Layout';
 
 interface SettingItemProps {
@@ -69,10 +67,7 @@ function SettingItem({
 }
 
 export default function SettingsScreen() {
-  const { user } = useAuthStore();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(true);
-  const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
+  const [user] = useState({ display_name: 'User' }); // Placeholder user data
 
   const handleProfilePress = () => {
     // TODO: Navigate to profile

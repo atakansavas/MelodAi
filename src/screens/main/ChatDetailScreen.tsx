@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 
 import { MelodAiService } from '@services/ai';
-import { SpotifyApiService, SpotifyAuthService } from '@services/spotify';
 
 import {
   ChatMessage,
@@ -93,7 +92,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     selectedTrackName: params?.trackName,
     selectedArtistName: params?.artistName,
     timestamp: new Date().toISOString(),
-    currentToken: SpotifyAuthService.getInstance().getAccessToken(),
+    // TODO: Add Supabase token when implementing Supabase auth
   });
 
   const handleSendMessage = async (messageText: string) => {
@@ -187,25 +186,11 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     setIsModalVisible(false);
 
     try {
-      const spotifyApi = SpotifyApiService.getInstance();
-
-      // Check if we have a trackId
-      if (!params?.trackId) {
-        Alert.alert('Hata', 'Şarkı bilgisi bulunamadı.');
-        return;
-      }
-
-      // Get track details first
-      // const trackDetails: SpotifyTrack = await spotifyApi.getTrack(params.trackId);
-
-      // Start playback with the track
-      await spotifyApi.startPlayback(params.trackId);
+      // TODO: Implement with Supabase music service
+      Alert.alert('Bilgi', 'Müzik çalma özelliği yakında gelecek!');
     } catch (error) {
       console.error('Error playing track:', error);
-      Alert.alert(
-        'Hata',
-        'Şarkı çalınırken bir hata oluştu. Spotify Premium hesabınızın aktif olduğundan emin olun.'
-      );
+      Alert.alert('Hata', 'Şarkı çalınırken bir hata oluştu.');
     }
   };
 

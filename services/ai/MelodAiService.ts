@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { API_CONFIG } from '../../constants/config';
-import { SpotifyAuthService } from '../spotify/auth';
 
 // Helper schemas
 const emailSchema = z.string().email('Invalid email format');
@@ -113,18 +112,10 @@ export class MelodAiService {
   }
 
   /**
-   * Helper method for making service calls with Spotify token
+   * Helper method for making service calls
    */
   private async makeServiceCall(endpoint: string, options: ServiceCallOptions = {}): Promise<any> {
     try {
-      const authService = SpotifyAuthService.getInstance();
-      const accessToken = await authService.getAccessToken();
-      console.log('🚀 ~ MelodAiService ~ makeServiceCall ~ accessToken:', accessToken);
-
-      if (!accessToken) {
-        throw new Error('No valid Spotify access token available');
-      }
-
       if (!API_CONFIG.SERVICE_URL) {
         throw new Error('SERVICE_URL not configured');
       }
@@ -137,7 +128,6 @@ export class MelodAiService {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
           ...headers,
         },
         ...(body && { body: JSON.stringify(body) }),
@@ -286,6 +276,28 @@ export class MelodAiService {
       }
       console.error('Error registering user:', error);
       throw error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  /**
+   * Get chat history sessions
+   */
+  public async getChatHistorySessions(page: number = 1, _limit: number = 10): Promise<any> {
+    try {
+      // TODO: Implement with Supabase when ready
+      return {
+        success: true,
+        data: {
+          sessions: [],
+          pagination: {
+            page,
+            hasMore: false,
+          },
+        },
+      };
+    } catch (error) {
+      console.error('Error getting chat history sessions:', error);
+      throw error;
     }
   }
 }
