@@ -10,6 +10,9 @@ import {
   View,
 } from 'react-native';
 
+import { useSpotifyService } from '@/services/spotify/useSpotifyService';
+import { useAuth } from '@/src/contexts/AuthContext';
+
 import { SpotifyPlayHistory, SpotifyTrack } from '../../../types/spotify';
 import { MainLayout } from '../../components/Layout';
 import { useRouter } from '../../hooks/useRouter';
@@ -17,6 +20,8 @@ import { useRouter } from '../../hooks/useRouter';
 export default function HomeScreen() {
   const router = useRouter();
   const [user] = useState({ display_name: 'User' }); // Placeholder user data
+  const { getSpotifyAccessToken } = useAuth();
+  const spotifyService = useSpotifyService();
 
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,15 +30,15 @@ export default function HomeScreen() {
   const loadRecentTracks = useCallback(async () => {
     try {
       setIsLoading(true);
-      // TODO: Implement with Supabase data
-      setRecentTracks([]);
+      const recentTracks = await spotifyService.getRecentlyPlayed(20);
+      setRecentTracks(recentTracks.data?.items || []);
     } catch (error) {
       console.error('Error loading recent tracks:', error);
       Alert.alert('Hata', 'Şarkılar yüklenirken bir hata oluştu.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [spotifyService]);
 
   const onRefresh = async () => {
     setRefreshing(true);

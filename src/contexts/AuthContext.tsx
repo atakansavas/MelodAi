@@ -101,7 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Get Spotify access token
   const getSpotifyAccessToken = async (): Promise<string | null> => {
     try {
-      return await SecureStore.getItemAsync(STORAGE_KEYS.SPOTIFY_ACCESS_TOKEN);
+      const token = await SecureStore.getItemAsync(STORAGE_KEYS.SPOTIFY_ACCESS_TOKEN);
+      console.log('🚀 ~ getSpotifyAccessToken ~ token:', token);
+      return token;
     } catch (error) {
       console.error('Error getting Spotify access token:', error);
       return null;
@@ -146,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('🚀 ~ createSessionFromUrl ~ params:', params);
 
     if (errorCode) throw new Error(errorCode);
-    const { access_token, refresh_token } = params;
+    const { access_token, refresh_token, provider_refresh_token, provider_token } = params;
 
     if (!access_token) return;
 
@@ -155,6 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refresh_token: refresh_token || '',
     });
     if (error) throw error;
+
+    await storeSpotifyTokens(provider_token || '', provider_refresh_token || '');
     return data.session;
   };
 
@@ -174,17 +178,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           redirectTo: redirectUri,
           skipBrowserRedirect: true,
           scopes:
-            'user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative streaming',
+            'user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative streaming user-read-recently-played user-top-read ',
         },
       });
 
       const res = await WebBrowser.openAuthSessionAsync(data?.url ?? '', redirectUri);
       if (res.type === 'success') {
         const session = await createSessionFromUrl(res.url);
-        await storeSpotifyTokens(
-          session?.provider_token ?? '',
-          session?.provider_refresh_token ?? ''
-        );
+        console.log('🚀 ~ login ~ session:', session);
 
         setState((prev) => ({ ...prev, isNewUser: false }));
       } else if (res.type === 'cancel') {
@@ -286,15 +287,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
 
+      console.log('🚀 ~ AuthProvider ~ session?.user:', session?.user);
       if (event === 'SIGNED_IN' && session?.user) {
-        const isNewUser = await checkIfNewUser(session.user.id);
-        setState({
+        // const isNewUser = await checkIfNewUser(session.user.id);
+        setState((prev) => ({
+          ...prev,
           user: session.user as AuthUser,
           session,
-          isLoading: false,
           isAuthenticated: true,
-          isNewUser,
-        });
+          isNewUser: false,
+        }));
         router.goToHome();
       } else if (event === 'INITIAL_SESSION' && session?.user) {
         router.goToHome();
