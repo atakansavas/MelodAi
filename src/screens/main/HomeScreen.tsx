@@ -19,8 +19,9 @@ import { useRouter } from '../../hooks/useRouter';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [user] = useState({ display_name: 'User' }); // Placeholder user data
-  const { getSpotifyAccessToken } = useAuth();
+  const { user } = useAuth();
+  console.log('🚀 ~ HomeScreen ~ user:', user);
+
   const spotifyService = useSpotifyService();
 
   const [recentTracks, setRecentTracks] = useState<SpotifyPlayHistory[]>([]);
@@ -98,7 +99,7 @@ export default function HomeScreen() {
 
   return (
     <MainLayout
-      title={`Selam ${user?.display_name}! 👋`}
+      title={`Selam ${user?.user_metadata?.name}! 👋`}
       subtitle="Hangi şarkı hakkında konuşmak istersiniz?"
       showChatInput={true}
     >

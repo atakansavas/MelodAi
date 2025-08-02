@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 
+import { useAuth } from '@/src/contexts/AuthContext';
 import { MelodAiService } from '@services/ai';
 
 import {
@@ -43,7 +44,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-
+  const { getSpotifyAccessToken } = useAuth();
   const trackName = params?.trackName || 'Müzik';
   console.log('🚀 ~ ChatDetailScreen ~ params:', params);
   const artistName = params?.artistName || '';
@@ -87,11 +88,12 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     setMessages([welcomeMessage]);
   };
 
-  const buildContext = () => ({
+  const buildContext = async () => ({
     trackId: params?.trackId,
     selectedTrackName: params?.trackName,
     selectedArtistName: params?.artistName,
     timestamp: new Date().toISOString(),
+    currentToken: await getSpotifyAccessToken(),
     // TODO: Add Supabase token when implementing Supabase auth
   });
 
@@ -116,7 +118,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       const response = await melodAiService.sendMessage(
         messageText.trim(),
         sessionId,
-        buildContext()
+        await buildContext()
       );
 
       // Update sessionId if it's a new session

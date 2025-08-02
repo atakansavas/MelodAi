@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
+import { SPOTIFY_CONFIG, STORAGE_KEYS } from '@/constants/config';
+
 import { useRouter } from '../hooks/useRouter';
 import { supabase } from '../lib/supabase';
 
@@ -12,11 +14,16 @@ export interface AuthUser {
   id: string;
   email?: string;
   user_metadata?: {
-    spotify_id?: string;
-    spotify_access_token?: string;
-    spotify_refresh_token?: string;
-    display_name?: string;
     avatar_url?: string;
+    email?: string;
+    email_verified?: boolean;
+    full_name?: string;
+    iss?: string;
+    name?: string;
+    phone_verified?: boolean;
+    picture?: string;
+    provider_id?: string;
+    sub?: string;
   };
   created_at: string;
   updated_at: string;
@@ -37,13 +44,6 @@ export interface AuthContextType extends AuthState {
   refreshSpotifyToken: () => Promise<string | null>;
   getSpotifyAccessToken: () => Promise<string | null>;
 }
-
-// Storage keys
-const STORAGE_KEYS = {
-  SPOTIFY_ACCESS_TOKEN: 'spotify_access_token',
-  SPOTIFY_REFRESH_TOKEN: 'spotify_refresh_token',
-  IS_NEW_USER: 'is_new_user',
-};
 
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,22 +114,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSpotifyToken = async (): Promise<string | null> => {
     try {
       const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.SPOTIFY_REFRESH_TOKEN);
+      console.log('🚀 ~ refreshSpotifyToken ~ refreshToken:', refreshToken);
       if (!refreshToken) {
         throw new Error('No refresh token available');
       }
+
+      const requestBody = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: SPOTIFY_CONFIG.CLIENT_ID,
+      });
+      console.log('🚀 ~ refreshSpotifyToken ~ requestBody:', requestBody.toString());
 
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID || '',
-        }).toString(),
+        body: requestBody.toString(),
       });
 
+      console.log('🚀 ~ refreshSpotifyToken ~ response:', response);
       if (!response.ok) {
         throw new Error('Failed to refresh Spotify token');
       }

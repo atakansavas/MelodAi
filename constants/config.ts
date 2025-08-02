@@ -17,4 +17,7 @@ export const SPOTIFY_CONFIG = {
 export const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: 'onboarding_completed',
   SELECTED_AGENT: 'selected_agent_id',
+  SPOTIFY_ACCESS_TOKEN: 'spotify_access_token',
+  SPOTIFY_REFRESH_TOKEN: 'spotify_refresh_token',
+  IS_NEW_USER: 'is_new_user',
 };

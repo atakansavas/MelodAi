@@ -34,11 +34,11 @@ export interface SpotifyProfile {
   id: string;
   display_name: string;
   email: string;
-  images?: Array<{
+  images?: {
     url: string;
     height: number | null;
     width: number | null;
-  }>;
+  }[];
   external_urls?: {
     spotify: string;
   };
@@ -120,16 +120,6 @@ export interface ChatMessage {
   metadata?: Record<string, any>;
   created_at: string;
 }
-
-// Storage keys
-export const STORAGE_KEYS = {
-  SPOTIFY_ACCESS_TOKEN: 'spotify_access_token',
-  SPOTIFY_REFRESH_TOKEN: 'spotify_refresh_token',
-  IS_NEW_USER: 'is_new_user',
-  ONBOARDING_COMPLETED: 'onboarding_completed',
-  SELECTED_AGENT: 'selected_agent_id',
-  USER_PREFERENCES: 'user_preferences',
-} as const;
 
 // OAuth scopes
 export const SPOTIFY_SCOPES = [
