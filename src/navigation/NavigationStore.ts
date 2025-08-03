@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { ScreenName, NavigationState, NavigationParams } from '../types/navigation';
+import { NavigationParams, NavigationState, ScreenName } from '../types/navigation';
 
 interface NavigationStore extends NavigationState {
   navigate: (screen: ScreenName, params?: NavigationParams) => void;
@@ -14,6 +14,8 @@ export const useNavigation = create<NavigationStore>((set, get) => ({
   params: undefined,
 
   navigate: (screen: ScreenName, params?: NavigationParams) => {
+    console.log('🚀 ~ NavigationStore ~ navigate ~ screen:', screen);
+    console.log('🚀 ~ NavigationStore ~ navigate ~ params:', params);
     const currentState = get();
     set({
       currentScreen: screen,

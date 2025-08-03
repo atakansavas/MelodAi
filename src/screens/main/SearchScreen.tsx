@@ -12,37 +12,57 @@ import {
   View,
 } from 'react-native';
 
+import { useSpotifyService } from '../../../services/spotify/useSpotifyService';
 import { SpotifyTrack } from '../../../types/spotify';
 import { MainLayout } from '../../components/Layout';
 import { useRouter } from '../../hooks/useRouter';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const spotifyService = useSpotifyService();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const searchTracks = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setHasSearched(false);
-      return;
-    }
+  const searchTracks = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        setHasSearched(false);
+        return;
+      }
 
-    try {
-      setIsLoading(true);
-      setHasSearched(true);
-      // TODO: Implement with Supabase music service
-      setSearchResults([]);
-    } catch (error) {
-      console.error('Error searching tracks:', error);
-      Alert.alert('Hata', 'Şarkı arama sırasında bir hata oluştu.');
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      try {
+        setIsLoading(true);
+        setHasSearched(true);
+
+        const response = await spotifyService.search({
+          query: query.trim(),
+          types: ['track'],
+          limit: 20,
+          market: 'TR', // Türkiye pazarı
+        });
+
+        if (response.error) {
+          console.error('Spotify search error:', response.error);
+          Alert.alert('Hata', 'Şarkı arama sırasında bir hata oluştu.');
+          setSearchResults([]);
+        } else if (response.data?.tracks) {
+          setSearchResults(response.data.tracks.items);
+        } else {
+          setSearchResults([]);
+        }
+      } catch (error) {
+        console.error('Error searching tracks:', error);
+        Alert.alert('Hata', 'Şarkı arama sırasında bir hata oluştu.');
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [spotifyService]
+  );
 
   // Debounced search
   useEffect(() => {

@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 
-import type { SupabaseChatSession } from '../../../types/chat';
 import MainLayout from '../../components/Layout/MainLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from '../../hooks/useRouter';
@@ -25,7 +24,7 @@ interface LoadingState {
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<SupabaseChatSession[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState<LoadingState>({
     initial: true,
     pagination: false,
@@ -155,71 +154,67 @@ export default function HistoryScreen() {
   };
 
   const handleSessionPress = useCallback(
-    (session: SupabaseChatSession) => {
+    (session: any) => {
       router.goToChatDetail({
         trackId: session.spotify_context?.trackId,
         trackName: session.spotify_context?.trackName,
         artistName: session.spotify_context?.artistName,
+        sessionId: session.session_id || session.id,
       });
     },
     [router]
   );
 
   const renderSessionCard = useCallback(
-    ({ item }: { item: SupabaseChatSession }) => (
-      <TouchableOpacity
-        style={styles.sessionCard}
-        onPress={() => handleSessionPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.dateContainer}>
-            <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
-            <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
-          </View>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Feather name="message-circle" size={12} color="rgba(255,255,255,0.6)" />
-              <Text style={styles.statText}>{item.session_metadata.message_count}</Text>
+    ({ item }: { item: any }) => {
+      return (
+        <TouchableOpacity
+          style={styles.sessionCard}
+          onPress={() => handleSessionPress(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.dateContainer}>
+              <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
+              <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
             </View>
-            <View style={styles.statItem}>
-              <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
-              <Text style={styles.statText}>
-                {formatDuration(item.session_metadata.session_duration_ms)}
-              </Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Feather name="message-circle" size={12} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.statText}>-</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.statText}>
+                  {formatDuration(0)} {/* TODO: Calculate actual duration */}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.cardContent}>
-          <Text style={styles.firstMessage} numberOfLines={2}>
-            {item.session_metadata.first_user_message || 'Sohbet başlatıldı'}
-          </Text>
-          <View style={styles.lastMessageContainer}>
-            <Feather name="corner-down-right" size={14} color="rgba(255,255,255,0.4)" />
-            <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.session_metadata.last_message || 'Mesaj yok'}
+          <View style={styles.cardContent}>
+            <Text style={styles.firstMessage} numberOfLines={2}>
+              Sohbet Geçmişi
             </Text>
-          </View>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <View style={styles.interactionTypeContainer}>
-            <View
-              style={[
-                styles.interactionBadge,
-                getInteractionBadgeStyle(item.session_metadata.interaction_type),
-              ]}
-            >
-              <Text style={styles.interactionText}>
-                {getInteractionTypeLabel(item.session_metadata.interaction_type)}
+            <View style={styles.lastMessageContainer}>
+              <Feather name="corner-down-right" size={14} color="rgba(255,255,255,0.4)" />
+              <Text style={styles.lastMessage} numberOfLines={1}>
+                Sohbete devam et
               </Text>
             </View>
           </View>
-          <Feather name="chevron-right" size={16} color="rgba(255,255,255,0.3)" />
-        </View>
-      </TouchableOpacity>
-    ),
+
+          <View style={styles.cardFooter}>
+            <View style={styles.interactionTypeContainer}>
+              <View style={[styles.interactionBadge, getInteractionBadgeStyle('general')]}>
+                <Text style={styles.interactionText}>{getInteractionTypeLabel('general')}</Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={16} color="rgba(255,255,255,0.3)" />
+          </View>
+        </TouchableOpacity>
+      );
+    },
     [handleSessionPress]
   );
 

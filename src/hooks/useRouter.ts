@@ -16,7 +16,11 @@ export const useRouter = () => {
       trackName?: string;
       artistName?: string;
       initialMessage?: string;
-    }) => navigate('MAIN_CHAT_DETAIL', params),
+      sessionId?: string;
+    }) => {
+      console.log('🚀 ~ useRouter ~ goToChatDetail ~ params:', params);
+      navigate('MAIN_CHAT_DETAIL', params);
+    },
     [navigate]
   );
   const goToSettings = useCallback(() => navigate('MAIN_SETTINGS'), [navigate]);
