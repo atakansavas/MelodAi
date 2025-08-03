@@ -74,24 +74,52 @@ export interface ChatStartData {
 }
 
 // Add new interfaces for the chat API
+export interface MessageHistoryItem {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
+export interface ChatContext {
+  userIntent?: string;
+  spotifyData?: Record<string, any>;
+  userPreferences?: Record<string, any>;
+}
+
 export interface ChatMessagePayload {
   message: string;
-  sessionId?: string;
-  context: Record<string, any>;
+  messageHistory?: MessageHistoryItem[];
+  context?: ChatContext;
+}
+
+export interface SpotifyData {
+  tracks?: any[];
+  artists?: any[];
+  albums?: any[];
+  currentPlayback?: Record<string, any>;
+  recommendations?: any[];
+  topTracks?: any[];
+  topArtists?: any[];
+  createdPlaylist?: Record<string, any>;
+  actionTaken?: string;
+  actionResult?: Record<string, any>;
 }
 
 export interface ChatApiResponse {
   success: boolean;
   data: {
     response: string;
-    sessionId: string;
-    isNewSession: boolean;
+    contextUsed?: string[];
+    spotifyData?: SpotifyData;
+    toolsUsed?: string[];
   };
   meta: {
     requestId: string;
     responseTime: number;
     timestamp: string;
   };
+  error?: string;
+  details?: string;
 }
 
 export interface ServiceCallOptions {
@@ -179,13 +207,13 @@ export class MelodAiService {
    */
   public async sendMessage(
     message: string,
-    sessionId: string,
-    context: Record<string, any> = {}
+    messageHistory: MessageHistoryItem[] = [],
+    context: ChatContext = {}
   ): Promise<ChatApiResponse> {
     try {
       const payload: ChatMessagePayload = {
         message,
-        ...(sessionId && { sessionId }),
+        messageHistory,
         context,
       };
       console.log('🚀 ~ MelodAiService ~ sendMessage ~ payload:', payload);

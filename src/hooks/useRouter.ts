@@ -18,7 +18,6 @@ export const useRouter = () => {
       initialMessage?: string;
       sessionId?: string;
     }) => {
-      console.log('🚀 ~ useRouter ~ goToChatDetail ~ params:', params);
       navigate('MAIN_CHAT_DETAIL', params);
     },
     [navigate]

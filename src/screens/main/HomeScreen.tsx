@@ -20,7 +20,6 @@ import { useRouter } from '../../hooks/useRouter';
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  console.log('🚀 ~ HomeScreen ~ user:', user);
 
   const spotifyService = useSpotifyService();
 

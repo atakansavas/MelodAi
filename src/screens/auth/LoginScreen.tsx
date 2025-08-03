@@ -1,5 +1,5 @@
-import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-google-fonts/lato';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-google-fonts/lato';
 import { ResizeMode, Video } from 'expo-av';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';

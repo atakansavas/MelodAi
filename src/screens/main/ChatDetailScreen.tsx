@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,15 +14,15 @@ import {
 } from 'react-native';
 
 import { useAuth } from '@/src/contexts/AuthContext';
-import { MelodAiService } from '@services/ai';
-
+import { useRouter } from '@/src/hooks/useRouter';
 import {
   ChatMessage,
   createAssistantMessage,
   createLoadingMessage,
   createUserMessage,
-} from '../../../types/chat';
-import { useRouter } from '../../hooks/useRouter';
+} from '@/types/chat';
+import { MelodAiService, type ChatContext, type MessageHistoryItem } from '@services/ai';
+import { ChatService } from '@services/supabase';
 
 interface ChatDetailScreenProps {
   params?: {
@@ -44,29 +44,164 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
   const { getSpotifyAccessToken } = useAuth();
   const trackName = params?.trackName || 'Müzik';
-  console.log('🚀 ~ ChatDetailScreen ~ params:', params);
   const artistName = params?.artistName || '';
   const melodAiService = MelodAiService.getInstance();
+  const chatService = ChatService.getInstance();
 
-  // Check if there are any user messages
+  // Check if there are any user messages (excluding welcome message for new sessions)
   const hasUserMessages = messages.some((message) => message.role === 'user');
 
-  useEffect(() => {
-    // Initialize session
-    initializeSession();
+  const buildContext = useCallback(
+    async (): Promise<ChatContext> => ({
+      userIntent: 'music_chat',
+      spotifyData: {
+        trackId: params?.trackId,
+        trackName: params?.trackName,
+        artistName: params?.artistName,
+        currentToken: await getSpotifyAccessToken(),
+      },
+      userPreferences: {
+        language: 'tr',
+        timestamp: new Date().toISOString(),
+      },
+    }),
+    [params?.trackId, params?.trackName, params?.artistName, getSpotifyAccessToken]
+  );
+
+  const convertMessagesToHistory = useCallback((messages: ChatMessage[]): MessageHistoryItem[] => {
+    return messages
+      .filter((msg) => !msg.isLoading)
+      .map((msg) => ({
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      }));
   }, []);
 
+  const createWelcomeMessage = useCallback(
+    (sessionId: string) =>
+      createAssistantMessage(
+        'Merhaba! Müzik hakkında herhangi bir konuda sohbet edebiliriz. Hangi konuda yardımcı olabilirim?',
+        sessionId,
+        params?.trackId
+      ),
+    [params?.trackId]
+  );
+
+  const initializeSession = useCallback(async () => {
+    const initialSessionId = params?.sessionId || '';
+    setSessionId(initialSessionId);
+
+    if (initialSessionId) {
+      try {
+        const existingMessages = await chatService.getChatMessages(initialSessionId);
+        if (existingMessages.length > 0) {
+          setMessages(existingMessages);
+        } else {
+          setMessages([createWelcomeMessage(initialSessionId)]);
+        }
+      } catch (error) {
+        console.error('Error loading chat session:', error);
+        setMessages([createWelcomeMessage(initialSessionId)]);
+      }
+    } else {
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(newSessionId);
+      setMessages([createWelcomeMessage(newSessionId)]);
+    }
+  }, [params?.sessionId, chatService, createWelcomeMessage]);
+
+  const handleSendMessage = useCallback(
+    async (messageText: string) => {
+      if (!messageText.trim() || isLoading) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Create and display user message
+        const userMessage = createUserMessage(messageText.trim(), sessionId, params?.trackId);
+        setMessages((prev) => [...prev, userMessage]);
+
+        // Save user message to Supabase
+        await chatService.saveUserMessage(sessionId, messageText.trim(), params?.trackId);
+
+        // Add loading message
+        const loadingMessage = createLoadingMessage(sessionId);
+        setMessages((prev) => [...prev, loadingMessage]);
+
+        // Get AI response with message history
+        const messageHistory = convertMessagesToHistory(messages);
+        const context = await buildContext();
+
+        const response = await melodAiService.sendMessage(
+          messageText.trim(),
+          messageHistory,
+          context
+        );
+
+        // Create and save AI response
+        const aiMessage = createAssistantMessage(
+          response.data.response,
+          sessionId,
+          params?.trackId
+        );
+
+        await chatService.saveAssistantMessage(sessionId, response.data.response, params?.trackId);
+
+        // Replace loading message with AI response
+        setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
+        setRetryCount(0);
+      } catch (error) {
+        console.error('Error sending message:', error);
+        setError(error instanceof Error ? error.message : 'Failed to send message');
+        setMessages((prev) => prev.filter((msg) => !msg.isLoading));
+
+        Alert.alert('Hata', 'Mesaj gönderilirken bir hata oluştu. Tekrar denemek ister misiniz?', [
+          { text: 'İptal', style: 'cancel' },
+          { text: 'Tekrar Dene', onPress: () => handleRetry(messageText) },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [sessionId, params?.trackId, isLoading, chatService, melodAiService, buildContext]
+  );
+
+  const handleRetry = useCallback(
+    async (messageText: string) => {
+      if (retryCount >= 3) {
+        Alert.alert('Hata', 'Maksimum deneme sayısına ulaşıldı. Lütfen daha sonra tekrar deneyin.');
+        return;
+      }
+      setRetryCount((prev) => prev + 1);
+      await handleSendMessage(messageText);
+    },
+    [retryCount]
+  );
+
   useEffect(() => {
-    // Handle initial message if provided
-    if (params?.initialMessage && messages.length === 1 && !hasUserMessages) {
+    initializeSession();
+  }, [params, initializeSession]);
+
+  useEffect(() => {
+    // Handle initial message if provided (only for new sessions)
+    if (params?.initialMessage && messages.length === 1 && !hasUserMessages && !params?.sessionId) {
       // Auto-send the initial message after session is initialized
       setTimeout(() => {
         handleSendMessage(params.initialMessage!);
       }, 500);
     }
-  }, [params?.initialMessage, messages.length, hasUserMessages]);
+  }, [
+    params?.initialMessage,
+    messages.length,
+    hasUserMessages,
+    params?.sessionId,
+    handleSendMessage,
+  ]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -74,98 +209,6 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
-
-  const initializeSession = () => {
-    const initialSessionId = params?.sessionId || '';
-    setSessionId(initialSessionId);
-
-    // Add welcome message
-    const welcomeMessage = createAssistantMessage(
-      'Merhaba! Müzik hakkında herhangi bir konuda sohbet edebiliriz. Hangi konuda yardımcı olabilirim?',
-      initialSessionId,
-      params?.trackId
-    );
-    setMessages([welcomeMessage]);
-  };
-
-  const buildContext = async () => ({
-    trackId: params?.trackId,
-    selectedTrackName: params?.trackName,
-    selectedArtistName: params?.artistName,
-    timestamp: new Date().toISOString(),
-    currentToken: await getSpotifyAccessToken(),
-    // TODO: Add Supabase token when implementing Supabase auth
-  });
-
-  const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || isLoading) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Create user message
-      const userMessage = createUserMessage(messageText.trim(), sessionId, params?.trackId);
-      setMessages((prev) => [...prev, userMessage]);
-
-      // Add loading message
-      const loadingMessage = createLoadingMessage(sessionId);
-      setMessages((prev) => [...prev, loadingMessage]);
-
-      // Send message to AI service
-      console.log('🚀 ~ handleSendMessage ~ messageText:', messageText);
-      console.log('🚀 ~ handleSendMessage ~ sessionId:', sessionId);
-      const response = await melodAiService.sendMessage(
-        messageText.trim(),
-        sessionId,
-        await buildContext()
-      );
-
-      // Update sessionId if it's a new session
-      if (response.data.isNewSession && response.data.sessionId !== sessionId) {
-        setSessionId(response.data.sessionId);
-      }
-
-      // Create AI response message
-      const aiMessage = createAssistantMessage(
-        response.data.response,
-        response.data.sessionId,
-        params?.trackId
-      );
-
-      // Replace loading message with AI response
-      setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
-
-      setRetryCount(0); // Reset retry count on success
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setError(error instanceof Error ? error.message : 'Failed to send message');
-
-      // Remove loading message
-      setMessages((prev) => prev.filter((msg) => !msg.isLoading));
-
-      // Show error alert with retry option
-      Alert.alert('Hata', 'Mesaj gönderilirken bir hata oluştu. Tekrar denemek ister misiniz?', [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Tekrar Dene',
-          onPress: () => handleRetry(messageText),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRetry = async (messageText: string) => {
-    if (retryCount >= 3) {
-      Alert.alert('Hata', 'Maksimum deneme sayısına ulaşıldı. Lütfen daha sonra tekrar deneyin.');
-      return;
-    }
-
-    setRetryCount((prev) => prev + 1);
-    await handleSendMessage(messageText);
-  };
 
   const handleInputSubmit = async () => {
     const messageText = inputText;
@@ -177,23 +220,11 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     await handleSendMessage(actionText);
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('tr-TR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const formatTime = (date: Date) => date.toString().slice(16, 21);
 
   const handlePlayAction = async () => {
     setIsModalVisible(false);
-
-    try {
-      // TODO: Implement with Supabase music service
-      Alert.alert('Bilgi', 'Müzik çalma özelliği yakında gelecek!');
-    } catch (error) {
-      console.error('Error playing track:', error);
-      Alert.alert('Hata', 'Şarkı çalınırken bir hata oluştu.');
-    }
+    Alert.alert('Bilgi', 'Müzik çalma özelliği yakında gelecek!');
   };
 
   const handleShareAction = () => {
@@ -346,7 +377,7 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         {!hasUserMessages && !isLoading && renderQuickActions()}
       </ScrollView>
 
-      {/* Input Area - only show if there are user messages */}
+      {/* Input Area - show if there are user messages */}
       {hasUserMessages && (
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>

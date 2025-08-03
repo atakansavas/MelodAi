@@ -103,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getSpotifyAccessToken = async (): Promise<string | null> => {
     try {
       const token = await SecureStore.getItemAsync(STORAGE_KEYS.SPOTIFY_ACCESS_TOKEN);
-      console.log('🚀 ~ getSpotifyAccessToken ~ token:', token);
       return token;
     } catch (error) {
       console.error('Error getting Spotify access token:', error);
@@ -298,9 +297,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-
-      console.log('🚀 ~ AuthProvider ~ session?.user:', session?.user);
       if (event === 'SIGNED_IN' && session?.user) {
         // const isNewUser = await checkIfNewUser(session.user.id);
         setState((prev) => ({

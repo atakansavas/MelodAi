@@ -11,10 +11,11 @@ import {
   View,
 } from 'react-native';
 
+import { ChatService } from '@services/supabase';
+
 import MainLayout from '../../components/Layout/MainLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from '../../hooks/useRouter';
-import { supabase } from '../../lib/supabase';
 
 interface LoadingState {
   initial: boolean;
@@ -52,19 +53,11 @@ export default function HistoryScreen() {
           setLoading((prev) => ({ ...prev, pagination: true }));
         }
 
-        const { data, error: supabaseError } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .range((page - 1) * 10, page * 10 - 1);
+        const chatService = ChatService.getInstance();
+        const sessions = await chatService.getChatSessions();
 
-        if (supabaseError) {
-          throw supabaseError;
-        }
-
-        if (data) {
-          const newSessions = data;
+        if (sessions) {
+          const newSessions = sessions;
 
           if (page === 1) {
             setSessions(newSessions);
@@ -159,7 +152,7 @@ export default function HistoryScreen() {
         trackId: session.spotify_context?.trackId,
         trackName: session.spotify_context?.trackName,
         artistName: session.spotify_context?.artistName,
-        sessionId: session.session_id || session.id,
+        sessionId: session.id,
       });
     },
     [router]
