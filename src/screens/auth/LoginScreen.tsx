@@ -1,5 +1,5 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-google-fonts/lato';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
@@ -122,7 +122,7 @@ export default function LoginScreen() {
           <View style={styles.brandSection}>
             <View style={styles.brandContainer}>
               <Ionicons name="musical-notes" size={48} color="#1DB954" />
-              <Text style={styles.brandText}>MelodAi</Text>
+              <Text style={styles.brandText}>Spot Song</Text>
             </View>
             <Text style={styles.tagline}>Your AI-powered{'\n'}music companion</Text>
             <View style={styles.divider} />

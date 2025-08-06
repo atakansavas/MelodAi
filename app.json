@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Song Spot",
-    "slug": "songspot",
+    "name": "Spot Song",
+    "slug": "spotsong",
     "version": "0.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "songspot",
+    "scheme": "spotsong",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
@@ -44,7 +44,7 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "spotify",
-            "CFBundleURLSchemes": ["songspot"]
+            "CFBundleURLSchemes": ["spotsong"]
           }
         ]
       }
@@ -62,7 +62,7 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "songspot"
+              "scheme": "spotsong"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

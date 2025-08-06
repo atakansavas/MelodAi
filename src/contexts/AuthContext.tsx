@@ -180,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, isLoading: true }));
 
       // Configure OAuth
-      const redirectUri = 'songspot://auth/callback';
+      const redirectUri = 'spotsong://auth/callback';
       // const redirectTo = AuthSession.makeRedirectUri();
       // console.log('🚀 ~ login ~ redirectTo:', redirectTo);
 

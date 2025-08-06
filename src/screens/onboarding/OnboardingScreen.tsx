@@ -26,7 +26,7 @@ export default function OnboardingScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Ionicons name="musical-notes" size={48} color="#1DB954" />
-            <Text style={styles.logoText}>MelodAi</Text>
+            <Text style={styles.logoText}>Spot Song</Text>
           </View>
         </View>
 

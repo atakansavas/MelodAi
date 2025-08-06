@@ -74,7 +74,7 @@ export default function SettingsScreen() {
 
   // Get app version from Expo Constants
   const appVersion = Constants.expoConfig?.version || '1.0.0';
-  const appName = Constants.expoConfig?.name || 'SongSpot';
+  const appName = Constants.expoConfig?.name || 'SpotSong';
 
   const handleProfilePress = () => {
     Alert.alert('Profil', 'Profil ayarları yakında eklenecek.', [

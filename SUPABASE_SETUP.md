@@ -20,7 +20,7 @@ This guide will help you set up Supabase authentication with Spotify OAuth in yo
 
 1. In your Supabase dashboard, go to **Authentication > Settings**
 2. Enable **Email confirmations** if needed
-3. Configure **Site URL** to your app's URL scheme: `songspot://`
+3. Configure **Site URL** to your app's URL scheme: `spotsong://`
 
 ### Set up Spotify OAuth Provider
 
@@ -40,8 +40,8 @@ This guide will help you set up Supabase authentication with Spotify OAuth in yo
 
 Add these redirect URIs to your Spotify app:
 
-- Development: `songspot://auth/callback`
-- Production: `songspot://auth/callback`
+- Development: `spotsong://auth/callback`
+- Production: `spotsong://auth/callback`
 
 ## 3. Environment Variables
 
@@ -171,7 +171,7 @@ CREATE POLICY "Users can insert own chat messages" ON public.chat_messages
 
 ### URL Schemes
 
-The app is configured with the `songspot` URL scheme for OAuth redirects. This is already set up in `app.json`.
+The app is configured with the `spotsong` URL scheme for OAuth redirects. This is already set up in `app.json`.
 
 ### Deep Linking
 
