@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { MotiView } from 'moti';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -68,31 +69,69 @@ function SettingItem({
 
 export default function SettingsScreen() {
   const [user] = useState({ display_name: 'User' }); // Placeholder user data
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+
+  // Get app version from Expo Constants
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const appName = Constants.expoConfig?.name || 'SongSpot';
 
   const handleProfilePress = () => {
-    // TODO: Navigate to profile
-    console.log('Profile pressed');
-  };
-
-  const handlePrivacyPress = () => {
-    // TODO: Navigate to privacy settings
-    console.log('Privacy pressed');
-  };
-
-  const handleAboutPress = () => {
-    Alert.alert('Hakkında', 'Spoti v1.0.0\n\nMüzik deneyiminizi AI ile zenginleştirin.', [
+    Alert.alert('Profil', 'Profil ayarları yakında eklenecek.', [
       { text: 'Tamam', style: 'default' },
     ]);
   };
 
+  const handlePrivacyPress = () => {
+    Alert.alert('Gizlilik', 'Gizlilik ayarları yakında eklenecek.', [
+      { text: 'Tamam', style: 'default' },
+    ]);
+  };
+
+  const handleAboutPress = () => {
+    Alert.alert(
+      'Hakkında',
+      `${appName} v${appVersion}\n\nMüzik deneyiminizi AI ile zenginleştirin.`,
+      [{ text: 'Tamam', style: 'default' }]
+    );
+  };
+
   const handleHelpPress = () => {
-    // TODO: Navigate to help
-    console.log('Help pressed');
+    Alert.alert('Yardım', 'Yardım ve destek yakında eklenecek.', [
+      { text: 'Tamam', style: 'default' },
+    ]);
   };
 
   const handleTermsPress = () => {
-    // TODO: Navigate to terms
-    console.log('Terms pressed');
+    Alert.alert('Kullanım Şartları', 'Kullanım şartları yakında eklenecek.', [
+      { text: 'Tamam', style: 'default' },
+    ]);
+  };
+
+  const handleNotificationsToggle = (value: boolean) => {
+    setNotificationsEnabled(value);
+    // TODO: Implement actual notification settings
+    console.log('Notifications enabled:', value);
+  };
+
+  const handleDarkModeToggle = (value: boolean) => {
+    setDarkModeEnabled(value);
+    // TODO: Implement actual dark mode settings
+    console.log('Dark mode enabled:', value);
+  };
+
+  const handleRateApp = () => {
+    // TODO: Implement app store rating
+    Alert.alert('Uygulamayı Değerlendir', 'Uygulama mağazası değerlendirmesi yakında eklenecek.', [
+      { text: 'Tamam', style: 'default' },
+    ]);
+  };
+
+  const handleShareApp = () => {
+    // TODO: Implement share functionality
+    Alert.alert('Uygulamayı Paylaş', 'Paylaşım özelliği yakında eklenecek.', [
+      { text: 'Tamam', style: 'default' },
+    ]);
   };
 
   return (
@@ -137,6 +176,42 @@ export default function SettingsScreen() {
             </View>
           </MotiView>
 
+          {/* Preferences Section */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 500,
+              delay: 300,
+            }}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>Tercihler</Text>
+            <View style={styles.sectionContent}>
+              <SettingItem
+                icon="bell"
+                title="Bildirimler"
+                subtitle="Push bildirimleri"
+                showSwitch={true}
+                switchValue={notificationsEnabled}
+                onSwitchChange={handleNotificationsToggle}
+                showArrow={false}
+                delay={400}
+              />
+              <SettingItem
+                icon="moon"
+                title="Karanlık Mod"
+                subtitle="Karanlık tema"
+                showSwitch={true}
+                switchValue={darkModeEnabled}
+                onSwitchChange={handleDarkModeToggle}
+                showArrow={false}
+                delay={500}
+              />
+            </View>
+          </MotiView>
+
           {/* Support Section */}
           <MotiView
             from={{ opacity: 0, translateY: 30 }}
@@ -174,6 +249,36 @@ export default function SettingsScreen() {
             </View>
           </MotiView>
 
+          {/* App Actions Section */}
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 500,
+              delay: 500,
+            }}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>Uygulama</Text>
+            <View style={styles.sectionContent}>
+              <SettingItem
+                icon="star"
+                title="Uygulamayı Değerlendir"
+                subtitle="App Store'da değerlendirin"
+                onPress={handleRateApp}
+                delay={600}
+              />
+              <SettingItem
+                icon="share-2"
+                title="Uygulamayı Paylaş"
+                subtitle="Arkadaşlarınızla paylaşın"
+                onPress={handleShareApp}
+                delay={700}
+              />
+            </View>
+          </MotiView>
+
           {/* App Info */}
           <MotiView
             from={{ opacity: 0, scale: 0.9 }}
@@ -185,7 +290,9 @@ export default function SettingsScreen() {
             }}
             style={styles.appInfo}
           >
-            <Text style={styles.appInfoText}>Spoti v1.0.0</Text>
+            <Text style={styles.appInfoText}>
+              {appName} v{appVersion}
+            </Text>
             <Text style={styles.appInfoSubtext}>Müzik deneyiminizi AI ile zenginleştirin</Text>
           </MotiView>
         </ScrollView>

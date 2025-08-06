@@ -42,6 +42,7 @@ export class ChatService {
         console.warn('User not authenticated, returning null for chat session');
         return null;
       }
+      console.log('🚀 ~ ChatService ~ getChatSession ~ sessionId:', sessionId);
 
       const { data, error } = await supabase
         .from('chat_sessions')
@@ -53,6 +54,18 @@ export class ChatService {
       if (error) {
         console.error('Error fetching chat session:', error);
         return null;
+      }
+
+      // Ensure timestamps in messages are properly converted to Date objects
+      if (data && data.messages) {
+        data.messages = data.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: msg.timestamp
+            ? msg.timestamp instanceof Date
+              ? msg.timestamp
+              : new Date(msg.timestamp)
+            : new Date(),
+        }));
       }
 
       return data;
@@ -72,27 +85,34 @@ export class ChatService {
         return [];
       }
 
+      console.log('🚀 ~ ChatService ~ getChatMessages ~ sessionId:', sessionId);
       const session = await this.getChatSession(sessionId);
       if (!session) return [];
 
-      return session.messages || [];
+      // Ensure timestamps are properly converted to Date objects
+      const messages = session.messages || [];
+      return messages.map((msg: any) => ({
+        ...msg,
+        timestamp: msg.timestamp
+          ? msg.timestamp instanceof Date
+            ? msg.timestamp
+            : new Date(msg.timestamp)
+          : new Date(),
+      }));
     } catch (error) {
       console.error('Error in getChatMessages:', error);
       return [];
     }
   }
 
-  async createChatSession(
-    sessionId: string,
-    spotifyContext?: {
-      trackId?: string;
-      trackName?: string;
-      artistName?: string;
-      albumName?: string;
-      albumArt?: string;
-      duration?: number;
-    }
-  ): Promise<string | null> {
+  async createChatSession(spotifyContext?: {
+    trackId?: string;
+    trackName?: string;
+    artistName?: string;
+    albumName?: string;
+    albumArt?: string;
+    duration?: number;
+  }): Promise<string | null> {
     try {
       const {
         data: { user },
@@ -105,7 +125,6 @@ export class ChatService {
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert({
-          id: sessionId,
           user_id: user.id,
           messages: [],
           spotify_context: spotifyContext || null,
@@ -133,7 +152,14 @@ export class ChatService {
   async saveUserMessage(
     sessionId: string,
     message: string,
-    trackId?: string
+    spotifyContext?: {
+      trackId?: string;
+      trackName?: string;
+      artistName?: string;
+      albumName?: string;
+      albumArt?: string;
+      duration?: number;
+    }
   ): Promise<string | null> {
     try {
       const {
@@ -144,14 +170,16 @@ export class ChatService {
         return null;
       }
 
+      console.log('🚀 ~ ChatService ~ saveUserMessage ~ sessionId:', sessionId);
       let session = await this.getChatSession(sessionId);
       if (!session) {
-        const sessionDbId = await this.createChatSession(sessionId, { trackId });
+        const sessionDbId = await this.createChatSession(spotifyContext);
         if (!sessionDbId) {
           console.error('Failed to create chat session');
           return null;
         }
-        session = await this.getChatSession(sessionId);
+        session = await this.getChatSession(sessionDbId);
+        sessionId = sessionDbId;
         if (!session) {
           console.error('Failed to get created chat session');
           return null;
@@ -164,7 +192,7 @@ export class ChatService {
         content: message,
         timestamp: new Date(),
         sessionId,
-        trackId,
+        trackId: spotifyContext?.trackId,
       };
 
       const updatedMessages = [...(session.messages || []), userMessage];
@@ -190,7 +218,7 @@ export class ChatService {
         return null;
       }
 
-      return userMessage.id;
+      return sessionId;
     } catch (error) {
       console.error('Error in saveUserMessage:', error);
       return null;
@@ -211,6 +239,7 @@ export class ChatService {
         return null;
       }
 
+      console.log('🚀 ~ ChatService ~ saveAssistantMessage ~ sessionId:', sessionId);
       const session = await this.getChatSession(sessionId);
       if (!session) {
         console.error('Chat session not found');
@@ -249,7 +278,7 @@ export class ChatService {
         return null;
       }
 
-      return assistantMessage.id;
+      return sessionId;
     } catch (error) {
       console.error('Error in saveAssistantMessage:', error);
       return null;

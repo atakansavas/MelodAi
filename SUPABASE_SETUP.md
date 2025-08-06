@@ -50,16 +50,16 @@ Create a `.env` file in your project root:
 ```env
 # Supabase Configuration
 EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Spotify Configuration
 EXPO_PUBLIC_SPOTIFY_CLIENT_ID=your_spotify_client_id
-EXPO_PUBLIC_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 
 # API Configuration
 EXPO_PUBLIC_SERVICE_URL=your_api_service_url
 EXPO_PUBLIC_AI_API_URL=your_ai_api_url
-EXPO_PUBLIC_AI_API_KEY=your_ai_api_key
+AI_API_KEY=your_ai_api_key
 ```
 
 ## 4. Supabase Database Schema

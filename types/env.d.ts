@@ -2,7 +2,7 @@ declare module '@env' {
   export const EXPO_PUBLIC_SPOTIFY_CLIENT_ID: string;
   export const SPOTIFY_CLIENT_SECRET: string;
   export const EXPO_PUBLIC_AI_API_URL: string;
-  export const EXPO_PUBLIC_AI_API_KEY: string;
+  export const AI_API_KEY: string;
   export const NODE_ENV: string;
   export const DEBUG: string;
   export const APP_NAME: string;

@@ -1,5 +1,5 @@
 {
-  "name": "Melodia",
+  "name": "SongSpot",
   "main": "src/App.tsx",
   "version": "1.0.0",
   "scripts": {

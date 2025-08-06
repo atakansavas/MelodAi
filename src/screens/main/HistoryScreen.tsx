@@ -137,6 +137,8 @@ export default function HistoryScreen() {
   };
 
   const formatDuration = (durationMs: number): string => {
+    if (!durationMs || durationMs <= 0) return '0 dk';
+
     const minutes = Math.floor(durationMs / (1000 * 60));
     if (minutes < 60) {
       return `${minutes} dk`;
@@ -160,6 +162,20 @@ export default function HistoryScreen() {
 
   const renderSessionCard = useCallback(
     ({ item }: { item: any }) => {
+      // Get song information from spotify_context
+      const songName = item.spotify_context?.trackName || 'Bilinmeyen Şarkı';
+      const artistName = item.spotify_context?.artistName || '';
+      const messageCount = item.session_metadata?.message_count || 0;
+      const sessionDuration = item.session_metadata?.session_duration_ms || 0;
+      const lastMessage = item.session_metadata?.last_message || '';
+      const interactionType = item.session_metadata?.interaction_type || 'general';
+
+      // Get the last message from messages array if available
+      const lastMessageContent =
+        item.messages && item.messages.length > 0
+          ? item.messages[item.messages.length - 1]?.content
+          : lastMessage;
+
       return (
         <TouchableOpacity
           style={styles.sessionCard}
@@ -174,33 +190,34 @@ export default function HistoryScreen() {
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Feather name="message-circle" size={12} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.statText}>-</Text>
+                <Text style={styles.statText}>{messageCount}</Text>
               </View>
               <View style={styles.statItem}>
                 <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.statText}>
-                  {formatDuration(0)} {/* TODO: Calculate actual duration */}
-                </Text>
+                <Text style={styles.statText}>{formatDuration(sessionDuration)}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.cardContent}>
             <Text style={styles.firstMessage} numberOfLines={2}>
-              Sohbet Geçmişi
+              {songName}
+              {artistName && ` • ${artistName}`}
             </Text>
             <View style={styles.lastMessageContainer}>
               <Feather name="corner-down-right" size={14} color="rgba(255,255,255,0.4)" />
               <Text style={styles.lastMessage} numberOfLines={1}>
-                Sohbete devam et
+                {lastMessageContent || 'Sohbete devam et'}
               </Text>
             </View>
           </View>
 
           <View style={styles.cardFooter}>
             <View style={styles.interactionTypeContainer}>
-              <View style={[styles.interactionBadge, getInteractionBadgeStyle('general')]}>
-                <Text style={styles.interactionText}>{getInteractionTypeLabel('general')}</Text>
+              <View style={[styles.interactionBadge, getInteractionBadgeStyle(interactionType)]}>
+                <Text style={styles.interactionText}>
+                  {getInteractionTypeLabel(interactionType)}
+                </Text>
               </View>
             </View>
             <Feather name="chevron-right" size={16} color="rgba(255,255,255,0.3)" />
@@ -218,6 +235,8 @@ export default function HistoryScreen() {
       recommendation: 'Öneri',
       lyrics: 'Sözler',
       mood: 'Ruh Hali',
+      chat: 'Sohbet',
+      music_chat: 'Müzik Sohbeti',
     };
     return labels[type] || 'Genel';
   };
@@ -238,6 +257,11 @@ export default function HistoryScreen() {
         borderColor: 'rgba(138, 43, 226, 0.5)',
       },
       mood: { backgroundColor: 'rgba(255, 20, 147, 0.2)', borderColor: 'rgba(255, 20, 147, 0.5)' },
+      chat: { backgroundColor: 'rgba(29, 185, 84, 0.2)', borderColor: 'rgba(29, 185, 84, 0.5)' },
+      music_chat: {
+        backgroundColor: 'rgba(29, 185, 84, 0.2)',
+        borderColor: 'rgba(29, 185, 84, 0.5)',
+      },
     };
     return styles[type] || styles.general;
   };

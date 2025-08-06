@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { MotiText, MotiView } from 'moti';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -77,7 +78,11 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
       .map((msg) => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content,
-        timestamp: msg.timestamp.toISOString(),
+        timestamp: msg.timestamp
+          ? msg.timestamp instanceof Date
+            ? msg.timestamp.toISOString()
+            : new Date(msg.timestamp).toISOString()
+          : new Date().toISOString(),
       }));
   }, []);
 
@@ -108,11 +113,43 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         setMessages([createWelcomeMessage(initialSessionId)]);
       }
     } else {
-      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setSessionId(newSessionId);
-      setMessages([createWelcomeMessage(newSessionId)]);
+      // Create new session through ChatService
+      try {
+        const newSessionId = await chatService.createChatSession({
+          trackId: params?.trackId,
+          trackName: params?.trackName,
+          artistName: params?.artistName,
+        });
+
+        if (newSessionId) {
+          setSessionId(newSessionId);
+          setMessages([createWelcomeMessage(newSessionId)]);
+        } else {
+          // Fallback to local session ID if service fails
+          const fallbackSessionId = `session_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
+          setSessionId(fallbackSessionId);
+          setMessages([createWelcomeMessage(fallbackSessionId)]);
+        }
+      } catch (error) {
+        console.error('Error creating chat session:', error);
+        // Fallback to local session ID if service fails
+        const fallbackSessionId = `session_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        setSessionId(fallbackSessionId);
+        setMessages([createWelcomeMessage(fallbackSessionId)]);
+      }
     }
-  }, [params?.sessionId, chatService, createWelcomeMessage]);
+  }, [
+    params?.sessionId,
+    params?.trackId,
+    params?.trackName,
+    params?.artistName,
+    chatService,
+    createWelcomeMessage,
+  ]);
 
   const handleSendMessage = useCallback(
     async (messageText: string) => {
@@ -126,11 +163,26 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         const userMessage = createUserMessage(messageText.trim(), sessionId, params?.trackId);
         setMessages((prev) => [...prev, userMessage]);
 
-        // Save user message to Supabase
-        await chatService.saveUserMessage(sessionId, messageText.trim(), params?.trackId);
+        // Save user message to Supabase and get potential new sessionId
+        const newSessionId = await chatService.saveUserMessage(sessionId, messageText.trim(), {
+          trackId: params?.trackId,
+          trackName: params?.trackName,
+          artistName: params?.artistName,
+        });
+
+        // Update sessionId if a new one was created
+        if (newSessionId && newSessionId !== sessionId) {
+          setSessionId(newSessionId);
+          // Update the user message with the new sessionId
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === userMessage.id ? { ...msg, sessionId: newSessionId } : msg
+            )
+          );
+        }
 
         // Add loading message
-        const loadingMessage = createLoadingMessage(sessionId);
+        const loadingMessage = createLoadingMessage(newSessionId || sessionId);
         setMessages((prev) => [...prev, loadingMessage]);
 
         // Get AI response with message history
@@ -146,11 +198,15 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         // Create and save AI response
         const aiMessage = createAssistantMessage(
           response.data.response,
-          sessionId,
+          newSessionId || sessionId,
           params?.trackId
         );
 
-        await chatService.saveAssistantMessage(sessionId, response.data.response, params?.trackId);
+        await chatService.saveAssistantMessage(
+          newSessionId || sessionId,
+          response.data.response,
+          params?.trackId
+        );
 
         // Replace loading message with AI response
         setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
@@ -168,7 +224,16 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         setIsLoading(false);
       }
     },
-    [sessionId, params?.trackId, isLoading, chatService, melodAiService, buildContext]
+    [
+      sessionId,
+      params?.trackId,
+      isLoading,
+      chatService,
+      melodAiService,
+      buildContext,
+      convertMessagesToHistory,
+      messages,
+    ]
   );
 
   const handleRetry = useCallback(
@@ -233,14 +298,28 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   };
 
   const renderMessage = (message: ChatMessage) => (
-    <View
+    <MotiView
       key={message.id}
+      from={{ opacity: 0, translateY: 20 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{
+        type: 'timing',
+        duration: 300,
+      }}
       style={[
         styles.messageContainer,
         message.role === 'user' ? styles.userMessageContainer : styles.aiMessageContainer,
       ]}
     >
-      <View
+      <MotiView
+        from={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        transition={{
+          type: 'spring',
+          damping: 15,
+          stiffness: 150,
+          delay: 100,
+        }}
         style={[
           styles.messageBubble,
           message.role === 'user' ? styles.userMessageBubble : styles.aiMessageBubble,
@@ -261,15 +340,93 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
           {message.content}
         </Text>
         {message.isLoading && (
-          <View style={styles.loadingDots}>
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
+          <View style={styles.loadingContainer}>
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                type: 'timing',
+                duration: 500,
+                delay: 200,
+              }}
+              style={styles.loadingTextContainer}
+            >
+              <Feather name="music" size={16} color="#1DB954" style={styles.loadingIcon} />
+              <MotiText
+                from={{ opacity: 0.5 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  type: 'timing',
+                  duration: 1000,
+                  loop: true,
+                }}
+                style={styles.loadingText}
+              >
+                AI şarkıyı analiz ediyor...
+              </MotiText>
+            </MotiView>
+            <View style={styles.loadingDots}>
+              <MotiView
+                from={{ scale: 0.8, opacity: 0.3 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                transition={{
+                  type: 'timing',
+                  duration: 600,
+                  loop: true,
+                  delay: 0,
+                }}
+                style={[styles.dot, { backgroundColor: '#1DB954' }]}
+              />
+              <MotiView
+                from={{ scale: 0.8, opacity: 0.3 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                transition={{
+                  type: 'timing',
+                  duration: 600,
+                  loop: true,
+                  delay: 200,
+                }}
+                style={[styles.dot, { backgroundColor: '#1DB954' }]}
+              />
+              <MotiView
+                from={{ scale: 0.8, opacity: 0.3 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                transition={{
+                  type: 'timing',
+                  duration: 600,
+                  loop: true,
+                  delay: 400,
+                }}
+                style={[styles.dot, { backgroundColor: '#1DB954' }]}
+              />
+            </View>
+            <MotiView
+              from={{ rotate: '0deg' }}
+              animate={{ rotate: '360deg' }}
+              transition={{
+                type: 'timing',
+                duration: 2000,
+                loop: true,
+              }}
+              style={styles.loadingSpinner}
+            >
+              <Feather name="disc" size={20} color="#1DB954" />
+            </MotiView>
           </View>
         )}
-      </View>
-      <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
-    </View>
+      </MotiView>
+      <MotiView
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          type: 'timing',
+          duration: 400,
+          delay: 300,
+        }}
+      >
+        <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
+      </MotiView>
+    </MotiView>
   );
 
   const renderQuickActions = () => (
@@ -303,14 +460,14 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
 
       <TouchableOpacity
         style={styles.quickActionButton}
-        onPress={() => handleQuickAction('Bu Nedir?')}
+        onPress={() => handleQuickAction('Benzer şarkılar neler?')}
         disabled={isLoading}
         accessible={true}
         accessibilityLabel="Yardım al"
       >
         <Feather name="info" size={20} color="#fff" />
-        <Text style={styles.quickActionText}>Bu Nedir?</Text>
-        <Text style={styles.quickActionSubtext}>Neler yapabilirim?</Text>
+        <Text style={styles.quickActionText}>Benzer şarkılar</Text>
+        <Text style={styles.quickActionSubtext}>Benzer şarkılar neler?</Text>
       </TouchableOpacity>
     </View>
   );
@@ -673,5 +830,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     marginRight: 10,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  loadingTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  loadingIcon: {
+    marginRight: 6,
+  },
+  loadingText: {
+    fontSize: 12,
+    color: '#1DB954',
+    fontWeight: '500',
+  },
+  loadingSpinner: {
+    marginLeft: 8,
   },
 });
