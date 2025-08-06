@@ -2,6 +2,7 @@ import React from 'react';
 
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
+import AnonChatScreen from '../screens/main/AnonChatScreen';
 import ChatDetailScreen from '../screens/main/ChatDetailScreen';
 import HistoryScreen from '../screens/main/HistoryScreen';
 import HomeScreen from '../screens/main/HomeScreen';
@@ -18,6 +19,7 @@ export const ScreenRegistry: Record<ScreenName, React.ComponentType<any>> = {
   MAIN_CHAT_DETAIL: ChatDetailScreen,
   MAIN_SETTINGS: SettingsScreen,
   MAIN_HISTORY: HistoryScreen,
+  MAIN_ANON_CHAT: AnonChatScreen,
 };
 
 export const getScreenComponent = (screenName: ScreenName): React.ComponentType<any> => {

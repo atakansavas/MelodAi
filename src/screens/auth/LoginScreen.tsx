@@ -87,6 +87,10 @@ export default function LoginScreen() {
     }
   }, [isAuthenticating, isLoading, login, handleAuthError]);
 
+  const handleContinueWithoutSpotify = useCallback(() => {
+    router.navigate('MAIN_ANON_CHAT');
+  }, [router]);
+
   if (!fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
@@ -159,32 +163,47 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Login Button */}
-        <Pressable
-          onPress={handleLogin}
-          disabled={isAuthenticating || isLoading}
-          hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
-          style={styles.loginButton}
-        >
-          <View
-            style={[
-              styles.loginButtonContent,
-              (isAuthenticating || isLoading) && styles.loginButtonDisabled,
-            ]}
+        {/* Login Buttons */}
+        <View style={styles.loginButtonsContainer}>
+          {/* Continue with Spotify Button */}
+          <Pressable
+            onPress={handleLogin}
+            disabled={isAuthenticating || isLoading}
+            hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
+            style={styles.loginButton}
           >
-            {isAuthenticating || isLoading ? (
-              <>
-                <MaterialIcons name="hourglass-empty" size={28} color="#1DB954" />
-                <Text style={styles.loginButtonText}>Connecting to Spotify...</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons name="musical-notes" size={28} color="#1DB954" />
-                <Text style={styles.loginButtonText}>Continue with Spotify</Text>
-              </>
-            )}
-          </View>
-        </Pressable>
+            <View
+              style={[
+                styles.loginButtonContent,
+                (isAuthenticating || isLoading) && styles.loginButtonDisabled,
+              ]}
+            >
+              {isAuthenticating || isLoading ? (
+                <>
+                  <MaterialIcons name="hourglass-empty" size={28} color="#1DB954" />
+                  <Text style={styles.loginButtonText}>Connecting to Spotify...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="musical-notes" size={28} color="#1DB954" />
+                  <Text style={styles.loginButtonText}>Continue with Spotify</Text>
+                </>
+              )}
+            </View>
+          </Pressable>
+
+          {/* Continue Without Spotify Button */}
+          <Pressable
+            onPress={handleContinueWithoutSpotify}
+            hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
+            style={styles.testButton}
+          >
+            <View style={styles.testButtonContent}>
+              <Ionicons name="play-circle-outline" size={24} color="#8B5CF6" />
+              <Text style={styles.testButtonText}>Anonymously Chat</Text>
+            </View>
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
@@ -320,9 +339,12 @@ const styles = StyleSheet.create({
     fontFamily: 'LatoRegular',
     textAlign: 'center',
   },
-  loginButton: {
+  loginButtonsContainer: {
     marginHorizontal: _spacing * 2,
     marginBottom: _spacing * 2,
+  },
+  loginButton: {
+    marginBottom: _spacing,
   },
   loginButtonContent: {
     flexDirection: 'row',
@@ -345,5 +367,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'LatoBold',
     color: '#1DB954',
+  },
+  testButton: {
+    marginBottom: _spacing,
+  },
+  testButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: _spacing * 1.25,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#8B5CF6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  testButtonText: {
+    marginLeft: _spacing,
+    fontSize: 16,
+    fontFamily: 'LatoRegular',
+    color: '#8B5CF6',
   },
 });
