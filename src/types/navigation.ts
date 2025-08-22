@@ -6,7 +6,8 @@ export type ScreenName =
   | 'MAIN_CHAT_DETAIL'
   | 'MAIN_SETTINGS'
   | 'MAIN_HISTORY'
-  | 'MAIN_ANON_CHAT';
+  | 'MAIN_ANON_CHAT'
+  | 'APP_MAIN';
 
 export interface NavigationState {
   currentScreen: ScreenName;

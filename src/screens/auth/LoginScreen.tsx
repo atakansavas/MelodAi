@@ -1,9 +1,5 @@
 import { Lato_300Light, Lato_400Regular, Lato_700Bold, useFonts } from '@expo-google-fonts/lato';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { ResizeMode, Video } from 'expo-av';
-import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
-import { MotiView, useDynamicAnimation } from 'moti';
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import {
   Alert,
@@ -19,29 +15,14 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { useRouter } from '../../hooks/useRouter';
 
 const { width, height } = Dimensions.get('screen');
 
 const _spacing = 16;
 
-// Configure notification handling
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
-// TODO: Implement push notification token when needed
-
-// TODO: Implement logo component when needed
+// Minimal login screen for anonymous auth
 
 export default function LoginScreen() {
-  const router = useRouter();
   const { login, isLoading } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,12 +33,7 @@ export default function LoginScreen() {
     LatoLight: Lato_300Light,
   });
 
-  const dynamicAnimation = useDynamicAnimation(() => ({
-    opacity: 0,
-    translateY: 40,
-  }));
-
-  const handleAuthError = useCallback((errorMessage: string, error?: any) => {
+  const handleAuthError = useCallback((errorMessage: string, error?: unknown) => {
     console.error('Auth error:', error);
     setError(errorMessage);
     setIsAuthenticating(false);
@@ -70,26 +46,23 @@ export default function LoginScreen() {
     ]);
   }, []);
 
-  const handleLogin = useCallback(async () => {
+  const handleAnonymousLogin = useCallback(async () => {
     if (isAuthenticating || isLoading) return;
-
     setIsAuthenticating(true);
     setError(null);
-
     try {
       await login();
-      // Navigation will be handled by the auth context
-    } catch (error: any) {
-      const errorMessage = error?.message || 'An unexpected error occurred during login';
-      handleAuthError(errorMessage, error);
+    } catch (error: unknown) {
+      type ErrorWithMessage = { message?: unknown };
+      const message =
+        typeof error === 'object' && error && 'message' in (error as ErrorWithMessage)
+          ? String((error as ErrorWithMessage).message || '')
+          : 'An unexpected error occurred during login';
+      handleAuthError(message || 'An unexpected error occurred during login', error);
     } finally {
       setIsAuthenticating(false);
     }
   }, [isAuthenticating, isLoading, login, handleAuthError]);
-
-  const handleContinueWithoutSpotify = useCallback(() => {
-    router.navigate('MAIN_ANON_CHAT');
-  }, [router]);
 
   if (!fontsLoaded) {
     return (
@@ -107,20 +80,6 @@ export default function LoginScreen() {
       >
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-        {/* Background Video */}
-        <Video
-          shouldPlay
-          isLooping
-          source={{
-            uri: 'https://user-images.githubusercontent.com/2805320/126218253-bae143d4-ed8e-4dd0-8ae6-eb0065883e6c.mp4',
-          }}
-          resizeMode={ResizeMode.COVER}
-          style={[StyleSheet.absoluteFillObject, styles.videoOverlay]}
-        />
-
-        {/* Overlay */}
-        <View style={styles.overlay} />
-
         {/* Main Content */}
         <View style={styles.mainContent}>
           <View style={styles.brandSection}>
@@ -132,29 +91,6 @@ export default function LoginScreen() {
             <View style={styles.divider} />
           </View>
 
-          {/* Features Section */}
-          <MotiView state={dynamicAnimation} delay={200} style={styles.featuresSection}>
-            <Text style={styles.featuresTitle}>Discover Your Music</Text>
-            <View style={styles.featuresGrid}>
-              <View style={styles.featureItem}>
-                <Ionicons name="book-outline" size={24} color="#1DB954" />
-                <Text style={styles.featureText}>Song Stories</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="analytics-outline" size={24} color="#1DB954" />
-                <Text style={styles.featureText}>Music Analysis</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="create-outline" size={24} color="#1DB954" />
-                <Text style={styles.featureText}>Lyric Insights</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="heart-outline" size={24} color="#1DB954" />
-                <Text style={styles.featureText}>Mood Detection</Text>
-              </View>
-            </View>
-          </MotiView>
-
           {/* Error Message */}
           {error && (
             <View style={styles.errorContainer}>
@@ -163,11 +99,10 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Login Buttons */}
+        {/* Anonymous Login Button */}
         <View style={styles.loginButtonsContainer}>
-          {/* Continue with Spotify Button */}
           <Pressable
-            onPress={handleLogin}
+            onPress={handleAnonymousLogin}
             disabled={isAuthenticating || isLoading}
             hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
             style={styles.loginButton}
@@ -178,29 +113,10 @@ export default function LoginScreen() {
                 (isAuthenticating || isLoading) && styles.loginButtonDisabled,
               ]}
             >
-              {isAuthenticating || isLoading ? (
-                <>
-                  <MaterialIcons name="hourglass-empty" size={28} color="#1DB954" />
-                  <Text style={styles.loginButtonText}>Connecting to Spotify...</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="musical-notes" size={28} color="#1DB954" />
-                  <Text style={styles.loginButtonText}>Continue with Spotify</Text>
-                </>
-              )}
-            </View>
-          </Pressable>
-
-          {/* Continue Without Spotify Button */}
-          <Pressable
-            onPress={handleContinueWithoutSpotify}
-            hitSlop={{ left: 20, bottom: 20, right: 20, top: 20 }}
-            style={styles.testButton}
-          >
-            <View style={styles.testButtonContent}>
-              <Ionicons name="play-circle-outline" size={24} color="#8B5CF6" />
-              <Text style={styles.testButtonText}>Anonymously Chat</Text>
+              <Ionicons name="person-circle-outline" size={28} color="#1DB954" />
+              <Text style={styles.loginButtonText}>
+                {isAuthenticating || isLoading ? 'Signing in...' : 'Continue as Guest'}
+              </Text>
             </View>
           </Pressable>
         </View>
@@ -225,38 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'LatoRegular',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  videoOverlay: {
-    opacity: 0.8,
-  },
-  logo: {
-    position: 'absolute',
-    top: Constants.statusBarHeight + 20,
-    left: _spacing,
-    zIndex: 10,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: _spacing,
-    paddingVertical: _spacing * 0.75,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  logoText: {
-    marginLeft: _spacing * 0.5,
-    fontSize: 20,
-    fontFamily: 'LatoBold',
-    color: '#1DB954',
-  },
+
   mainContent: {
     flex: 1,
     justifyContent: 'space-between',
@@ -292,39 +177,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1DB954',
     borderRadius: 2,
   },
-  featuresSection: {
-    alignItems: 'center',
-    marginBottom: _spacing * 3,
-  },
-  featuresTitle: {
-    fontSize: 24,
-    fontFamily: 'LatoBold',
-    color: '#fff',
-    marginBottom: _spacing * 2,
-    textAlign: 'center',
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  featureItem: {
-    alignItems: 'center',
-    width: '48%',
-    marginBottom: _spacing * 2,
-    paddingVertical: _spacing,
-    paddingHorizontal: _spacing,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-  },
-  featureText: {
-    fontSize: 14,
-    fontFamily: 'LatoRegular',
-    color: '#fff',
-    marginTop: _spacing * 0.5,
-    textAlign: 'center',
-  },
+
   errorContainer: {
     backgroundColor: 'rgba(255, 59, 48, 0.9)',
     paddingHorizontal: _spacing,
@@ -367,29 +220,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'LatoBold',
     color: '#1DB954',
-  },
-  testButton: {
-    marginBottom: _spacing,
-  },
-  testButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: _spacing * 1.25,
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#8B5CF6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  testButtonText: {
-    marginLeft: _spacing,
-    fontSize: 16,
-    fontFamily: 'LatoRegular',
-    color: '#8B5CF6',
   },
 });

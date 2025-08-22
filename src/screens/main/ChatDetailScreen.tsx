@@ -16,6 +16,7 @@ import {
 
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useRouter } from '@/src/hooks/useRouter';
+import { useNavigation } from '@/src/navigation/NavigationStore';
 import {
   ChatMessage,
   createAssistantMessage,
@@ -37,6 +38,7 @@ interface ChatDetailScreenProps {
 
 export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
   const router = useRouter();
+  const { markChatSessionUpdated } = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
@@ -211,6 +213,9 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
         // Replace loading message with AI response
         setMessages((prev) => prev.filter((msg) => !msg.isLoading).concat(aiMessage));
         setRetryCount(0);
+
+        // Mark chat session as updated for home screen refresh
+        markChatSessionUpdated();
       } catch (error) {
         console.error('Error sending message:', error);
         setError(error instanceof Error ? error.message : 'Failed to send message');
@@ -267,6 +272,14 @@ export default function ChatDetailScreen({ params }: ChatDetailScreenProps) {
     params?.sessionId,
     handleSendMessage,
   ]);
+
+  // Mark session updated when messages change (for home screen refresh)
+  useEffect(() => {
+    if (messages.length > 1) {
+      // Only if there are actual conversation messages
+      markChatSessionUpdated();
+    }
+  }, [messages.length, markChatSessionUpdated]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive

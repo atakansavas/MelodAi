@@ -9,6 +9,7 @@ export const useRouter = () => {
   const goToLogin = useCallback(() => replace('AUTH_LOGIN'), [replace]);
   const goToOnboarding = useCallback(() => replace('ONBOARDING'), [replace]);
   const goToHome = useCallback(() => replace('MAIN_HOME'), [replace]);
+  const goToMain = useCallback(() => replace('APP_MAIN'), [replace]);
   const goToSearch = useCallback(() => navigate('MAIN_SEARCH'), [navigate]);
   const goToChatDetail = useCallback(
     (params?: {
@@ -45,6 +46,7 @@ export const useRouter = () => {
       goToLogin,
       goToOnboarding,
       goToHome,
+      goToMain,
       goToSearch,
       goToChatDetail,
       goToSettings,
@@ -58,6 +60,7 @@ export const useRouter = () => {
       goToLogin,
       goToOnboarding,
       goToHome,
+      goToMain,
       goToSearch,
       goToChatDetail,
       goToSettings,
